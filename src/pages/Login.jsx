@@ -31,7 +31,7 @@ export default function Login() {
         <div className="landing-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div className="landing-bg-glow"></div>
 
-            <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '3rem 2rem', position: 'relative', zIndex: 10 }}>
+            <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '3rem 2rem', position: 'relative', zIndex: 10, margin: '0 1rem' }}>
                 <div className="landing-logo" style={{ justifyContent: 'center', marginBottom: '1rem' }}>
                     <Receipt size={28} color="var(--accent-primary)" />
                     Invoice<span>Kit</span>

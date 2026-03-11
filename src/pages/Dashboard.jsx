@@ -35,27 +35,27 @@ export default function Dashboard() {
 
     return (
         <div className="landing-container" style={{ display: 'block' }}>
-            <nav className="landing-nav" style={{ padding: '1.5rem 4rem', borderBottom: '1px solid var(--surface-border)', background: 'var(--bg-darker)' }}>
+            <nav className="landing-nav" style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--surface-border)', background: 'var(--bg-darker)', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <Link to="/" className="landing-logo">
-                    <Receipt size={28} color="var(--accent-primary)" />
+                    <Receipt size={24} color="var(--accent-primary)" />
                     Invoice<span>Kit</span>
                 </Link>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <Link to="/app" className="nav-cta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem' }}>
-                        <Plus size={16} /> New Invoice
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Link to="/app" className="nav-cta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                        <Plus size={14} /> New Invoice
                     </Link>
                     <button
                         onClick={handleLogout}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 600 }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}
                     >
-                        <LogOut size={16} /> Logout
+                        <LogOut size={14} /> Logout
                     </button>
                 </div>
             </nav>
 
-            <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '4rem 2rem', position: 'relative', zIndex: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                    <h2 style={{ fontSize: '2.5rem', fontFamily: 'Outfit', fontWeight: 700, letterSpacing: '-0.02em' }}>Recent Invoices</h2>
+            <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '2rem 1rem', position: 'relative', zIndex: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', fontFamily: 'Outfit', fontWeight: 700, letterSpacing: '-0.02em' }}>Recent Invoices</h2>
                 </div>
 
                 {loading ? (
@@ -70,7 +70,7 @@ export default function Dashboard() {
                         <Link to="/app" className="hero-cta" style={{ marginTop: '1.5rem', padding: '0.75rem 1.5rem', fontSize: '1rem' }}>Create Invoice <ArrowRight size={16} /></Link>
                     </div>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                         {invoices.map(inv => (
                             <div
                                 key={inv.id}
