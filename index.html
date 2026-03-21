@@ -3,8 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>invoice-web</title>
+
+    <!-- PWA viewport — viewport-fit=cover is required for iPhone notch/Dynamic Island -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- iOS PWA behaviour -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="InvoiceKit" />
+
+    <!-- iOS home screen icon (iOS ignores manifest icons — this tag is mandatory) -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <meta name="theme-color" content="#2563EB" />
+
+    <title>InvoiceKit</title>
   </head>
   <body>
     <div id="root"></div>

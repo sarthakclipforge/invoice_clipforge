@@ -2,36 +2,67 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Receipt, Plus, LogOut, ArrowRight, FileText, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
+import { getAllInvoicesLocal, clearSession } from '../lib/db'
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
 
     useEffect(() => {
-        if (localStorage.getItem('invoicekit_auth') !== 'true') {
-            navigate('/login');
-            return;
+        const goOnline = () => setIsOnline(true)
+        const goOffline = () => setIsOnline(false)
+        window.addEventListener('online', goOnline)
+        window.addEventListener('offline', goOffline)
+        return () => {
+            window.removeEventListener('online', goOnline)
+            window.removeEventListener('offline', goOffline)
         }
-        fetchInvoices();
-    }, [navigate]);
+    }, [])
 
-    const fetchInvoices = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('invoices')
-                .select('*')
-                .order('created_at', { ascending: false });
-            if (error) throw error;
-            setInvoices(data || []);
-        } catch (err) {
-            console.error('Error fetching invoices:', err);
-        } finally {
-            setLoading(false);
+    useEffect(() => {
+        let cancelled = false
+
+        async function loadInvoices() {
+            // Step 1 — load from IndexedDB immediately (works offline)
+            const local = await getAllInvoicesLocal()
+            if (!cancelled && local.length > 0) {
+                setInvoices(local.map(inv => ({
+                    id: inv.supabaseId,
+                    invoice_number: inv.invoiceNumber,
+                    client_name: inv.clientName,
+                    total_amount: inv.totalAmount,
+                    currency: inv.currency,
+                    created_at: inv.updatedAt,
+                    updated_at: inv.updatedAt,
+                })))
+                setLoading(false)
+            }
+
+            // Step 2 — refresh from Supabase if online
+            if (navigator.onLine) {
+                const { data, error } = await supabase
+                    .from('invoices')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+
+                if (!cancelled && !error && data) {
+                    setInvoices(data)
+                    setLoading(false)
+                }
+            } else if (!cancelled && local.length === 0) {
+                // Truly offline and no local data
+                setLoading(false)
+            }
         }
-    };
 
-    const handleLogout = () => {
+        loadInvoices()
+        return () => { cancelled = true }
+    }, [])
+
+    const handleLogout = async () => {
+        await clearSession();
         localStorage.removeItem('invoicekit_auth');
         navigate('/');
     };
@@ -53,6 +84,20 @@ export default function Dashboard() {
                     </button>
                 </div>
             </nav>
+
+            {/* Offline banner */}
+            {!isOnline && (
+                <div style={{
+                    background: 'var(--color-cta)',
+                    color: '#fff',
+                    padding: '6px 16px',
+                    fontSize: '13px',
+                    fontFamily: '"Open Sans", sans-serif',
+                    textAlign: 'center',
+                }}>
+                    Offline — showing locally cached invoices. Changes will sync when reconnected.
+                </div>
+            )}
 
             {/* Main Content */}
             <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '2rem 1.5rem' }}>
@@ -80,7 +125,7 @@ export default function Dashboard() {
                             <div
                                 key={inv.id}
                                 className="card"
-                                onClick={() => navigate(`/app?id=${inv.id}`)}
+                                onClick={() => navigate(`/app/${inv.id}`)}
                                 style={{ cursor: 'pointer' }}
                             >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>

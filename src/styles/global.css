@@ -214,3 +214,41 @@ a:hover {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── PWA spinner keyframe ─────────────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── PWA safe area insets (iPhone notch / Dynamic Island) ─────────────────── */
+
+/* Topbar must clear the status bar */
+.topbar,
+[class*="topbar"],
+header {
+  padding-top: max(var(--space-sm, 8px), env(safe-area-inset-top));
+  padding-left: max(var(--space-md, 16px), env(safe-area-inset-left));
+  padding-right: max(var(--space-md, 16px), env(safe-area-inset-right));
+}
+
+/* Sidebar and main content must clear the home indicator at bottom */
+.sidebar,
+[class*="sidebar"],
+.invoice-container,
+[class*="invoice-container"],
+main {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Full-height layout must account for safe areas */
+.app-layout,
+[class*="app-layout"] {
+  min-height: 100dvh; /* dvh = dynamic viewport height — correct on iOS Safari */
+}
+
+/* Offline banner — shown above content, no safe area padding needed */
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}

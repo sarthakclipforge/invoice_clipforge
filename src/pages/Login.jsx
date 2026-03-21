@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Receipt, AlertCircle } from 'lucide-react'
 import { CREDENTIALS } from '../config/credentials'
+import { setSession, getSession } from '../lib/db'
 
 export default function Login() {
     const navigate = useNavigate();
@@ -10,16 +11,23 @@ export default function Login() {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        // Redirect if already logged in
-        if (localStorage.getItem('invoicekit_auth') === 'true') {
-            navigate('/dashboard');
-        }
+        // Redirect if already logged in (check IndexedDB, fall back to localStorage)
+        getSession().then(val => {
+            if (val === 'true') {
+                navigate('/dashboard');
+            }
+        }).catch(() => {
+            if (localStorage.getItem('invoicekit_auth') === 'true') {
+                navigate('/dashboard');
+            }
+        });
     }, [navigate]);
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         if (username === CREDENTIALS.username && password === CREDENTIALS.password) {
-            localStorage.setItem('invoicekit_auth', 'true');
+            await setSession('true');
+            localStorage.setItem('invoicekit_auth', 'true'); // keep localStorage as fallback
             navigate('/dashboard');
         } else {
             setError('Invalid username or password');

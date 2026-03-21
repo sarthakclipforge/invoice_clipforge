@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { saveInvoiceLocally, getInvoiceBySupabaseId, db } from "../lib/db";
 import "../styles/invoice.css";
 
 const CURRENCIES = [
@@ -105,13 +106,31 @@ export default function InvoiceApp() {
     }, []);
 
     useEffect(() => {
-        if (id) loadInvoice(id);
-    }, [id]);
+        if (!id) return; // new invoice — no loading needed
 
-    const loadInvoice = async (invoiceId) => {
-        const { data } = await supabase.from('invoices').select('invoice_data').eq('id', invoiceId).single();
-        if (data?.invoice_data) setS(data.invoice_data);
-    };
+        async function loadInvoice() {
+            // Try IndexedDB first (works offline)
+            const local = await getInvoiceBySupabaseId(id);
+            if (local?.invoice_data) {
+                setS(prev => ({ ...prev, ...local.invoice_data, mode: 'edit' }));
+            }
+
+            // Refresh from Supabase if online (get latest version)
+            if (navigator.onLine) {
+                const { data, error } = await supabase
+                    .from('invoices')
+                    .select('invoice_data')
+                    .eq('id', id)
+                    .single();
+
+                if (!error && data?.invoice_data) {
+                    setS(prev => ({ ...prev, ...data.invoice_data, mode: 'edit' }));
+                }
+            }
+        }
+
+        loadInvoice();
+    }, [id]);
 
     const upd = (k) => (v) => setS(p => ({ ...p, [k]: v }));
     const subtotal = s.lineItems.reduce((a, i) => a + i.qty * i.rate, 0);
@@ -133,6 +152,10 @@ export default function InvoiceApp() {
     const updateItem = (id, k, v) => setS(p => ({ ...p, lineItems: p.lineItems.map(i => i.id === id ? { ...i, [k]: v } : i) }));
 
     const generate = async () => {
+        if (!navigator.onLine) {
+            setS(p => ({ ...p, aiError: 'AI generation requires an internet connection.', aiLoading: false }));
+            return;
+        }
         if (!s.aiKey || !s.aiPrompt) return;
         setS(p => ({ ...p, aiLoading: true, aiError: "" }));
         try {
@@ -156,32 +179,64 @@ export default function InvoiceApp() {
 
     const handleSave = async () => {
         setIsSaving(true);
-        try {
-            if (id) {
-                await supabase.from('invoices').update({
-                    invoice_number: s.invoiceNumber,
-                    client_name: s.clientName,
-                    total_amount: subtotal + taxAmt,
-                    currency: s.currency,
-                    invoice_data: s,
-                    updated_at: new Date()
-                }).eq('id', id);
-                alert("Invoice updated successfully!");
-            } else {
-                const { data, error } = await supabase.from('invoices').insert({
-                    invoice_number: s.invoiceNumber,
-                    client_name: s.clientName,
-                    total_amount: subtotal + taxAmt,
-                    currency: s.currency,
-                    invoice_data: s
-                }).select().single();
 
-                if (error) throw error;
-                navigate(`/app/${data.id}`, { replace: true });
-                alert("Invoice saved to Dashboard!");
+        const totalAmount = subtotal + taxAmt;
+        const now = new Date().toISOString();
+
+        const localPayload = {
+            supabaseId: id || null,
+            invoiceNumber: s.invoiceNumber,
+            clientName: s.clientName,
+            totalAmount,
+            currency: s.currency,
+            invoice_data: { ...s, mode: 'edit', aiKey: '', aiError: '', aiLoading: false },
+            updatedAt: now,
+            synced: 0,
+        };
+
+        try {
+            // Always save locally first
+            const localId = await saveInvoiceLocally(localPayload);
+
+            // Push to Supabase if online
+            if (navigator.onLine) {
+                const supabasePayload = {
+                    invoice_number: s.invoiceNumber,
+                    client_name: s.clientName,
+                    total_amount: totalAmount,
+                    currency: s.currency,
+                    invoice_data: localPayload.invoice_data,
+                    updated_at: now,
+                };
+
+                if (id) {
+                    const { error } = await supabase
+                        .from('invoices')
+                        .update(supabasePayload)
+                        .eq('id', id);
+
+                    if (!error) {
+                        await db.invoices.update(localId, { synced: 1 });
+                    }
+                    alert('Invoice updated successfully!');
+                } else {
+                    const { data, error } = await supabase
+                        .from('invoices')
+                        .insert(supabasePayload)
+                        .select('id')
+                        .single();
+
+                    if (!error && data) {
+                        await db.invoices.update(localId, { synced: 1, supabaseId: data.id });
+                        navigate(`/app/${data.id}`, { replace: true });
+                    }
+                    alert('Invoice saved to Dashboard!');
+                }
+            } else {
+                alert('Saved offline. Will sync when back online.');
             }
         } catch (err) {
-            alert("Error saving invoice: " + err.message);
+            alert('Error saving invoice: ' + err.message);
         } finally {
             setIsSaving(false);
         }
