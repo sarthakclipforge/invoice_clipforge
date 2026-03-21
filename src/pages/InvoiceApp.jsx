@@ -253,46 +253,96 @@ export default function InvoiceApp() {
         setDownloading(true);
 
         try {
+            // 1. Wait for every font (Poppins, Open Sans) to be fully loaded
+            //    before touching the DOM. Without this, html2canvas captures
+            //    fallback system fonts at wrong metrics → text overlap.
+            await document.fonts.ready;
+
+            // 2. Temporarily neutralise the transform: scale() wrapper so
+            //    html2canvas measures the element at its true 800px size.
+            //    We move it offscreen so the layout shift is invisible to the user.
+            const wrapper = element.parentElement;
+            const prevTransform = wrapper.style.transform;
+            const prevPosition  = wrapper.style.position;
+            const prevLeft      = wrapper.style.left;
+            const prevTop       = wrapper.style.top;
+
+            wrapper.style.transform = 'none';
+            wrapper.style.position  = 'absolute';
+            wrapper.style.left      = '-9999px';
+            wrapper.style.top       = '0';
+
+            // 3. Two rAF yields — let the browser fully reflow at true size
+            //    before html2canvas reads any layout values.
+            await new Promise(resolve =>
+                requestAnimationFrame(() => requestAnimationFrame(resolve))
+            );
+
+            // 4. Capture
             const canvas = await html2canvas(element, {
-                scale: 2,              // 2x for retina sharpness
-                useCORS: true,         // required for the logo 
+                scale: 2,                  // retina sharpness
+                useCORS: true,
                 backgroundColor: '#ffffff',
                 logging: false,
                 width: 800,
-                windowWidth: 800,      // neutralises ResizeObserver scaling 
+                windowWidth: 800,
+                onclone: (clonedDoc) => {
+                    // Stamp every element's computed font properties directly onto
+                    // its inline style inside the clone. This locks in the correct
+                    // Poppins/Open Sans metrics even if the cloned document's
+                    // stylesheet environment differs from the live page.
+                    clonedDoc.querySelectorAll('*').forEach(el => {
+                        const cs = window.getComputedStyle(
+                            document.querySelector(`.${el.className}`) || document.body
+                        );
+                        el.style.fontFamily    = cs.fontFamily;
+                        el.style.fontSize      = cs.fontSize;
+                        el.style.fontWeight    = cs.fontWeight;
+                        el.style.lineHeight    = cs.lineHeight;
+                        el.style.letterSpacing = cs.letterSpacing;
+                    });
+                },
             });
 
-            const imgData = canvas.toDataURL('image/png');
+            // 5. Restore wrapper immediately — user never sees the shift
+            wrapper.style.transform = prevTransform;
+            wrapper.style.position  = prevPosition;
+            wrapper.style.left      = prevLeft;
+            wrapper.style.top       = prevTop;
 
+            // 6. Build A4 PDF — single page, scale to fit, never crop, never paginate
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
                 format: 'a4',
             });
 
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const pdfW = pdf.internal.pageSize.getWidth();   // 210mm
+            const pdfH = pdf.internal.pageSize.getHeight();  // 297mm
 
-            const canvasAspect = canvas.height / canvas.width;
-            const imgHeight = pdfWidth * canvasAspect;
+            const canvasAspect = canvas.height / canvas.width;  // height/width ratio
 
-            if (imgHeight <= pdfHeight) {
-                // Invoice fits on one page
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+            // Natural height if we use full A4 width
+            const naturalH = pdfW * canvasAspect;
+
+            let finalW, finalH, xOffset;
+
+            if (naturalH <= pdfH) {
+                // Invoice fits within A4 height — use full width, anchor to top
+                finalW  = pdfW;
+                finalH  = naturalH;
+                xOffset = 0;
             } else {
-                // Invoice is taller than A4 — slice across pages
-                let yOffset = 0;
-                let remaining = imgHeight;
-
-                while (remaining > 0) {
-                    pdf.addImage(imgData, 'PNG', 0, -yOffset, pdfWidth, imgHeight);
-                    remaining -= pdfHeight;
-                    yOffset += pdfHeight;
-                    if (remaining > 0) pdf.addPage();
-                }
+                // Invoice is taller than A4 — shrink proportionally to fit height
+                finalH  = pdfH;
+                finalW  = pdfH / canvasAspect;
+                xOffset = (pdfW - finalW) / 2;  // centre horizontally
             }
 
-            const clientSlug = s.clientName
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, 0, finalW, finalH);
+
+            // 7. Filename: ClientName_INV-000001.pdf
+            const clientSlug  = s.clientName
                 .trim()
                 .replace(/[^a-zA-Z0-9\s-]/g, '')
                 .replace(/\s+/g, '_');
@@ -301,8 +351,8 @@ export default function InvoiceApp() {
                 .trim()
                 .replace(/[^a-zA-Z0-9-]/g, '');
 
-            const fileName = `${clientSlug}_${invoiceSlug}.pdf`;
-            pdf.save(fileName);
+            pdf.save(`${clientSlug}_${invoiceSlug}.pdf`);
+
         } catch (err) {
             console.error('PDF generation failed:', err);
         } finally {
