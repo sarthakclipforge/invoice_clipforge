@@ -3,6 +3,8 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { saveInvoiceLocally, getInvoiceBySupabaseId, db } from "../lib/db";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import "../styles/invoice.css";
 
 const CURRENCIES = [
@@ -77,7 +79,9 @@ export default function InvoiceApp() {
     const navigate = useNavigate();
     const [s, setS] = useState(INIT);
     const [isSaving, setIsSaving] = useState(false);
+    const [downloading, setDownloading] = useState(false);
     const fileRef = useRef();
+    const invoiceRef = useRef(null);
     const nextId = useRef(3);
     const documentContainerRef = useRef();
     const invoiceWrapperRef = useRef();
@@ -242,6 +246,70 @@ export default function InvoiceApp() {
         }
     };
 
+    const handleDownload = async () => {
+        const element = invoiceRef.current;
+        if (!element) return;
+
+        setDownloading(true);
+
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,              // 2x for retina sharpness
+                useCORS: true,         // required for the logo 
+                backgroundColor: '#ffffff',
+                logging: false,
+                width: 800,
+                windowWidth: 800,      // neutralises ResizeObserver scaling 
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+
+            const canvasAspect = canvas.height / canvas.width;
+            const imgHeight = pdfWidth * canvasAspect;
+
+            if (imgHeight <= pdfHeight) {
+                // Invoice fits on one page
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+            } else {
+                // Invoice is taller than A4 — slice across pages
+                let yOffset = 0;
+                let remaining = imgHeight;
+
+                while (remaining > 0) {
+                    pdf.addImage(imgData, 'PNG', 0, -yOffset, pdfWidth, imgHeight);
+                    remaining -= pdfHeight;
+                    yOffset += pdfHeight;
+                    if (remaining > 0) pdf.addPage();
+                }
+            }
+
+            const clientSlug = s.clientName
+                .trim()
+                .replace(/[^a-zA-Z0-9\s-]/g, '')
+                .replace(/\s+/g, '_');
+
+            const invoiceSlug = s.invoiceNumber
+                .trim()
+                .replace(/[^a-zA-Z0-9-]/g, '');
+
+            const fileName = `${clientSlug}_${invoiceSlug}.pdf`;
+            pdf.save(fileName);
+        } catch (err) {
+            console.error('PDF generation failed:', err);
+        } finally {
+            setDownloading(false);
+        }
+    };
+
     // Sidebar controls
     const Sidebar = (
         <div className="app-sidebar">
@@ -361,7 +429,14 @@ export default function InvoiceApp() {
                 ref={invoiceWrapperRef}
                 style={getWrapperStyle()}
             >
-                <div className="invoice-paper" id="invoice" ref={invoicePaperRef}>
+                <div 
+                    className="invoice-paper" 
+                    id="invoice" 
+                    ref={(node) => {
+                        invoicePaperRef.current = node;
+                        invoiceRef.current = node;
+                    }}
+                >
                 <div className="inv-header">
                     <div className="inv-brand">
                         {s.logo ? (
@@ -491,8 +566,8 @@ export default function InvoiceApp() {
                     <button className="export-btn" onClick={handleSave} disabled={isSaving} style={{ background: 'var(--accent-primary)' }}>
                         <Save size={16} /> {isSaving ? "Saving..." : "Save Invoice"}
                     </button>
-                    <button className="export-btn" onClick={() => window.print()}>
-                        <Download size={16} /> Export PDF
+                    <button className="export-btn" onClick={handleDownload} disabled={downloading}>
+                        <Download size={16} /> {downloading ? 'Generating...' : 'Download PDF'}
                     </button>
                 </div>
             </div>
