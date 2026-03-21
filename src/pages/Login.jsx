@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Receipt, AlertCircle } from 'lucide-react'
 import { CREDENTIALS } from '../config/credentials'
-import '../styles/landing.css'
 
 export default function Login() {
     const navigate = useNavigate();
@@ -28,21 +27,19 @@ export default function Login() {
     };
 
     return (
-        <div className="landing-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div className="landing-bg-glow"></div>
-
-            <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '3rem 2rem', position: 'relative', zIndex: 10, margin: '0 1rem' }}>
-                <div className="landing-logo" style={{ justifyContent: 'center', marginBottom: '1rem' }}>
-                    <Receipt size={28} color="var(--accent-primary)" />
-                    Invoice<span>Kit</span>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-background)', padding: '2rem 1rem' }}>
+            <div className="card" style={{ width: '100%', maxWidth: '420px', padding: '2.5rem 2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <Receipt size={24} color="var(--color-cta)" />
+                    <span style={{ fontFamily: 'Poppins, sans-serif', fontSize: '1.3rem', fontWeight: 700 }}>Invoice<span style={{ color: 'var(--color-cta)' }}>Kit</span></span>
                 </div>
 
-                <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.95rem' }}>
+                <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
                     Sign in with your administrator credentials to access the dashboard.
                 </p>
 
                 {error && (
-                    <div style={{ padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                    <div style={{ padding: '0.75rem', background: 'rgba(220, 38, 38, 0.06)', border: '1px solid rgba(220, 38, 38, 0.2)', borderRadius: 'var(--radius-md)', color: 'var(--color-error)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
                         <AlertCircle size={16} /> {error}
                     </div>
                 )}
@@ -72,7 +69,7 @@ export default function Login() {
                         />
                     </div>
 
-                    <button type="submit" className="hero-cta" style={{ width: '100%', marginTop: '1rem', border: 'none', cursor: 'pointer', fontFamily: 'Inter', fontSize: '1rem' }}>
+                    <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem', padding: '0.85rem' }}>
                         Sign In
                     </button>
                 </form>

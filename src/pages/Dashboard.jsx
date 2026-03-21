@@ -1,100 +1,107 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabaseClient'
 import { useNavigate, Link } from 'react-router-dom'
-import { Receipt, FileText, Plus, LogOut, ArrowRight } from 'lucide-react'
-import '../styles/landing.css'
-
-function formatMoney(amount, currencyCode) {
-    if (!amount) return "$0.00";
-    return new Intl.NumberFormat('en-US', { style: "currency", currency: currencyCode, minimumFractionDigits: 2 }).format(amount || 0);
-}
+import { Receipt, Plus, LogOut, ArrowRight, FileText, Clock } from 'lucide-react'
+import { supabase } from '../lib/supabaseClient'
 
 export default function Dashboard() {
-    const [invoices, setInvoices] = useState([])
-    const [loading, setLoading] = useState(true)
-    const navigate = useNavigate()
-
-    async function fetchInvoices() {
-        const { data, error } = await supabase
-            .from('invoices')
-            .select('*')
-            .order('created_at', { ascending: false })
-
-        if (data) setInvoices(data)
-        setLoading(false)
-    }
+    const navigate = useNavigate();
+    const [invoices, setInvoices] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchInvoices()
-    }, [])
+        if (localStorage.getItem('invoicekit_auth') !== 'true') {
+            navigate('/login');
+            return;
+        }
+        fetchInvoices();
+    }, [navigate]);
 
-    function handleLogout() {
-        localStorage.removeItem('invoicekit_auth')
-        navigate('/')
-    }
+    const fetchInvoices = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('invoices')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            setInvoices(data || []);
+        } catch (err) {
+            console.error('Error fetching invoices:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('invoicekit_auth');
+        navigate('/');
+    };
 
     return (
-        <div className="landing-container" style={{ display: 'block' }}>
-            <nav className="landing-nav" style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--surface-border)', background: 'var(--bg-darker)', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <Link to="/" className="landing-logo">
-                    <Receipt size={24} color="var(--accent-primary)" />
-                    Invoice<span>Kit</span>
+        <div style={{ minHeight: '100vh', background: 'var(--color-background)' }}>
+            {/* Top Navbar */}
+            <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface)', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--color-text)' }}>
+                    <Receipt size={22} color="var(--color-cta)" />
+                    <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '1.1rem' }}>Invoice<span style={{ color: 'var(--color-cta)' }}>Kit</span></span>
                 </Link>
                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Link to="/app" className="nav-cta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                    <Link to="/app" className="btn-primary" style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
                         <Plus size={14} /> New Invoice
                     </Link>
-                    <button
-                        onClick={handleLogout}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}
-                    >
+                    <button onClick={handleLogout} style={{ background: 'transparent', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
                         <LogOut size={14} /> Logout
                     </button>
                 </div>
             </nav>
 
-            <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '2rem 1rem', position: 'relative', zIndex: 10 }}>
+            {/* Main Content */}
+            <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '2rem 1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                    <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', fontFamily: 'Outfit', fontWeight: 700, letterSpacing: '-0.02em' }}>Recent Invoices</h2>
+                    <h2 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.02em' }}>Recent Invoices</h2>
                 </div>
 
                 {loading ? (
-                    <p style={{ color: 'var(--text-muted)' }}>Loading your dashboard...</p>
+                    <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--color-text-muted)' }}>
+                        <Clock size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                        <p>Loading invoices...</p>
+                    </div>
                 ) : invoices.length === 0 ? (
-                    <div className="glass-panel" style={{ padding: '5rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--accent-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-                            <FileText size={40} color="var(--accent-primary)" />
-                        </div>
-                        <h3 style={{ fontSize: '1.5rem', fontFamily: 'Outfit', fontWeight: 600 }}>No invoices yet</h3>
-                        <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto', lineHeight: 1.6 }}>You haven't saved any invoices to your cloud yet. Create your first premium invoice and it will appear here safely.</p>
-                        <Link to="/app" className="hero-cta" style={{ marginTop: '1.5rem', padding: '0.75rem 1.5rem', fontSize: '1rem' }}>Create Invoice <ArrowRight size={16} /></Link>
+                    <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                        <FileText size={40} color="var(--color-text-muted)" style={{ marginBottom: '1rem' }} />
+                        <h3 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, marginBottom: '0.5rem' }}>No invoices yet</h3>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem', marginBottom: '1.5rem' }}>Create your first invoice to get started.</p>
+                        <Link to="/app" className="btn-primary" style={{ display: 'inline-flex' }}>
+                            Create Invoice <ArrowRight size={16} />
+                        </Link>
                     </div>
                 ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                         {invoices.map(inv => (
                             <div
                                 key={inv.id}
-                                className="glass-panel"
-                                style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', transition: 'all 0.2s ease', cursor: 'pointer' }}
-                                onClick={() => navigate(`/app/${inv.id}`)}
-                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                                className="card"
+                                onClick={() => navigate(`/app?id=${inv.id}`)}
+                                style={{ cursor: 'pointer' }}
                             >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <span style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', fontWeight: '700', letterSpacing: '0.05em' }}>{inv.invoice_number || 'UNKNOWN'}</span>
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                        {new Date(inv.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                                    <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '0.95rem' }}>
+                                        {inv.invoice_number || 'Untitled'}
+                                    </span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                        {new Date(inv.created_at).toLocaleDateString()}
                                     </span>
                                 </div>
-                                <div>
-                                    <h4 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 600 }}>{inv.client_name || 'Unnamed Client'}</h4>
-                                    <p style={{ fontSize: '1.5rem', fontWeight: '800', fontFamily: 'Outfit' }}>{formatMoney(inv.total_amount, inv.currency)}</p>
-                                </div>
+                                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+                                    {inv.client_name || 'No client'}
+                                </p>
+                                <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '1.15rem', color: 'var(--color-cta)' }}>
+                                    {inv.currency || '$'}{Number(inv.total_amount || 0).toLocaleString('en', { minimumFractionDigits: 2 })}
+                                </p>
                             </div>
                         ))}
                     </div>
                 )}
             </main>
         </div>
-    )
+    );
 }
