@@ -253,108 +253,97 @@ export default function InvoiceApp() {
         setDownloading(true);
 
         try {
-            // 1. Wait for every font (Poppins, Open Sans) to be fully loaded
-            //    before touching the DOM. Without this, html2canvas captures
-            //    fallback system fonts at wrong metrics → text overlap.
             await document.fonts.ready;
 
-            // 2. Temporarily neutralise the transform: scale() wrapper so
-            //    html2canvas measures the element at its true 800px size.
-            //    We move it offscreen so the layout shift is invisible to the user.
             const wrapper = element.parentElement;
             const prevTransform = wrapper.style.transform;
             const prevPosition  = wrapper.style.position;
             const prevLeft      = wrapper.style.left;
             const prevTop       = wrapper.style.top;
 
-            wrapper.style.transform = 'none';
-            wrapper.style.position  = 'absolute';
-            wrapper.style.left      = '-9999px';
-            wrapper.style.top       = '0';
+            try {
+                wrapper.style.transform = 'none';
+                wrapper.style.position  = 'absolute';
+                wrapper.style.left      = '-9999px';
+                wrapper.style.top       = '0';
 
-            // 3. Two rAF yields — let the browser fully reflow at true size
-            //    before html2canvas reads any layout values.
-            await new Promise(resolve =>
-                requestAnimationFrame(() => requestAnimationFrame(resolve))
-            );
+                await new Promise(resolve =>
+                    requestAnimationFrame(() => requestAnimationFrame(resolve))
+                );
 
-            // 4. Capture
-            const canvas = await html2canvas(element, {
-                scale: 2,                  // retina sharpness
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                logging: false,
-                width: 800,
-                windowWidth: 800,
-                onclone: (clonedDoc) => {
-                    // Stamp every element's computed font properties directly onto
-                    // its inline style inside the clone. This locks in the correct
-                    // Poppins/Open Sans metrics even if the cloned document's
-                    // stylesheet environment differs from the live page.
-                    clonedDoc.querySelectorAll('*').forEach(el => {
-                        const cs = window.getComputedStyle(
-                            document.querySelector(`.${el.className}`) || document.body
-                        );
-                        el.style.fontFamily    = cs.fontFamily;
-                        el.style.fontSize      = cs.fontSize;
-                        el.style.fontWeight    = cs.fontWeight;
-                        el.style.lineHeight    = cs.lineHeight;
-                        el.style.letterSpacing = cs.letterSpacing;
-                    });
-                },
-            });
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    width: 800,
+                    windowWidth: 800,
+                    onclone: (clonedDoc) => {
+                        const clonedElement = clonedDoc.getElementById('invoice');
+                        if (clonedElement && element) {
+                            const applyStyles = (orig, clone) => {
+                                const cs = window.getComputedStyle(orig);
+                                clone.style.fontFamily    = cs.fontFamily;
+                                clone.style.fontSize      = cs.fontSize;
+                                clone.style.fontWeight    = cs.fontWeight;
+                                clone.style.lineHeight    = cs.lineHeight;
+                                clone.style.letterSpacing = cs.letterSpacing;
+                            };
 
-            // 5. Restore wrapper immediately — user never sees the shift
-            wrapper.style.transform = prevTransform;
-            wrapper.style.position  = prevPosition;
-            wrapper.style.left      = prevLeft;
-            wrapper.style.top       = prevTop;
+                            applyStyles(element, clonedElement);
 
-            // 6. Build A4 PDF — single page, scale to fit, never crop, never paginate
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4',
-            });
+                            const originalNodes = Array.from(element.querySelectorAll('*'));
+                            const clonedNodes = Array.from(clonedElement.querySelectorAll('*'));
 
-            const pdfW = pdf.internal.pageSize.getWidth();   // 210mm
-            const pdfH = pdf.internal.pageSize.getHeight();  // 297mm
+                            for (let i = 0; i < originalNodes.length; i++) {
+                                if (originalNodes[i] && clonedNodes[i]) {
+                                    applyStyles(originalNodes[i], clonedNodes[i]);
+                                }
+                            }
+                        }
+                    },
+                });
 
-            const canvasAspect = canvas.height / canvas.width;  // height/width ratio
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4',
+                });
 
-            // Natural height if we use full A4 width
-            const naturalH = pdfW * canvasAspect;
+                const pdfW = pdf.internal.pageSize.getWidth();
+                const pdfH = pdf.internal.pageSize.getHeight();
+                const canvasAspect = canvas.height / canvas.width;
+                const naturalH = pdfW * canvasAspect;
 
-            let finalW, finalH, xOffset;
+                let finalW, finalH, xOffset;
 
-            if (naturalH <= pdfH) {
-                // Invoice fits within A4 height — use full width, anchor to top
-                finalW  = pdfW;
-                finalH  = naturalH;
-                xOffset = 0;
-            } else {
-                // Invoice is taller than A4 — shrink proportionally to fit height
-                finalH  = pdfH;
-                finalW  = pdfH / canvasAspect;
-                xOffset = (pdfW - finalW) / 2;  // centre horizontally
+                if (naturalH <= pdfH) {
+                    finalW  = pdfW;
+                    finalH  = naturalH;
+                    xOffset = 0;
+                } else {
+                    finalH  = pdfH;
+                    finalW  = pdfH / canvasAspect;
+                    xOffset = (pdfW - finalW) / 2;
+                }
+
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, 0, finalW, finalH);
+
+                const clientSlug  = s.clientName.trim().replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
+                const invoiceSlug = s.invoiceNumber.trim().replace(/[^a-zA-Z0-9-]/g, '');
+
+                pdf.save(`${clientSlug}_${invoiceSlug}.pdf`);
+
+            } finally {
+                wrapper.style.transform = prevTransform;
+                wrapper.style.position  = prevPosition;
+                wrapper.style.left      = prevLeft;
+                wrapper.style.top       = prevTop;
             }
-
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', xOffset, 0, finalW, finalH);
-
-            // 7. Filename: ClientName_INV-000001.pdf
-            const clientSlug  = s.clientName
-                .trim()
-                .replace(/[^a-zA-Z0-9\s-]/g, '')
-                .replace(/\s+/g, '_');
-
-            const invoiceSlug = s.invoiceNumber
-                .trim()
-                .replace(/[^a-zA-Z0-9-]/g, '');
-
-            pdf.save(`${clientSlug}_${invoiceSlug}.pdf`);
 
         } catch (err) {
             console.error('PDF generation failed:', err);
+            alert('PDF generation failed. Check console for details.');
         } finally {
             setDownloading(false);
         }
