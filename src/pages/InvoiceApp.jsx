@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
@@ -78,6 +78,31 @@ export default function InvoiceApp() {
     const [isSaving, setIsSaving] = useState(false);
     const fileRef = useRef();
     const nextId = useRef(3);
+    const documentContainerRef = useRef();
+    const invoiceWrapperRef = useRef();
+    const invoicePaperRef = useRef();
+    const [scale, setScale] = useState(1);
+
+    // ResizeObserver for scaling the invoice document
+    useEffect(() => {
+        const container = documentContainerRef.current;
+        if (!container) return;
+
+        const updateScale = () => {
+            const containerWidth = container.clientWidth;
+            const padding = window.innerWidth <= 480 ? 16 : window.innerWidth <= 768 ? 24 : window.innerWidth <= 1024 ? 32 : 96; // account for .app-document padding
+            const availableWidth = containerWidth - padding;
+            const invoiceWidth = 800;
+            const newScale = availableWidth < invoiceWidth ? availableWidth / invoiceWidth : 1;
+            setScale(Math.min(1, Math.max(0.25, newScale)));
+        };
+
+        const observer = new ResizeObserver(updateScale);
+        observer.observe(container);
+        updateScale();
+
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         if (id) loadInvoice(id);
@@ -257,9 +282,31 @@ export default function InvoiceApp() {
         </div>
     );
 
+    // Calculate the height offset when scaled
+    const getWrapperStyle = () => {
+        const style = {
+            transform: `scale(${scale})`,
+            transformOrigin: 'top center',
+            width: '800px',
+        };
+        if (scale < 1 && invoicePaperRef.current) {
+            // When scaled, the visual height is smaller but the element still occupies original space
+            // So we use a negative margin to collapse the extra space
+            const actualHeight = invoicePaperRef.current.offsetHeight;
+            const scaledHeight = actualHeight * scale;
+            style.marginBottom = `${scaledHeight - actualHeight}px`;
+        }
+        return style;
+    };
+
     const InvoiceDoc = (
-        <div className="app-document">
-            <div className="invoice-paper" id="invoice">
+        <div className="app-document" ref={documentContainerRef}>
+            <div
+                className="invoice-scale-wrapper"
+                ref={invoiceWrapperRef}
+                style={getWrapperStyle()}
+            >
+                <div className="invoice-paper" id="invoice" ref={invoicePaperRef}>
                 <div className="inv-header">
                     <div className="inv-brand">
                         {s.logo ? (
@@ -360,6 +407,7 @@ export default function InvoiceApp() {
                         <div className="inv-terms-text">{s.termsText}</div>
                     </div>
                 )}
+            </div>
             </div>
         </div>
     );

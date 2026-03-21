@@ -357,11 +357,18 @@
     align-items: flex-start;
 }
 
-/* The Invoice Document */
+/* Scaling wrapper — keeps invoice at fixed width, scales down on small screens */
+.invoice-scale-wrapper {
+    width: 800px;
+    flex-shrink: 0;
+    transform-origin: top center;
+    transition: transform 0.15s ease;
+}
+
+/* The Invoice Document — FIXED width, never reflows */
 .invoice-paper {
     background: #ffffff;
-    width: 100%;
-    max-width: 800px;
+    width: 800px;
     min-height: 1056px;
     /* Approx 8.5x11 aspect ratio */
     border-radius: 12px;
@@ -651,6 +658,9 @@
 }
 
 /* ========== RESPONSIVE STYLES ========== */
+/* NOTE: Invoice document (.invoice-paper) is NEVER reflowed.
+   It always renders at 800px fixed width, identical to PDF output.
+   Only the sidebar, topbar, and document container adapt to screen size. */
 
 /* Tablet: ≤ 1024px */
 @media (max-width: 1024px) {
@@ -669,38 +679,7 @@
     }
 
     .app-document {
-        padding: 2rem 1.5rem;
-    }
-
-    .invoice-paper {
-        padding: 2.5rem;
-        min-height: auto;
-    }
-
-    .inv-header {
-        margin-bottom: 2.5rem;
-    }
-
-    .inv-title {
-        font-size: 2.25rem;
-    }
-
-    .inv-balance {
-        font-size: 1.5rem;
-    }
-
-    .inv-meta-grid {
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .inv-dates {
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .inv-footer {
-        gap: 2rem;
+        padding: 2rem 1rem;
     }
 }
 
@@ -741,120 +720,7 @@
     }
 
     .app-document {
-        padding: 1rem;
-    }
-
-    .invoice-paper {
-        padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    }
-
-    .inv-header {
-        flex-direction: column;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .inv-brand {
-        gap: 1rem;
-    }
-
-    .inv-logo {
-        width: 56px;
-        height: 56px;
-        border-radius: 10px;
-    }
-
-    .inv-biz-name {
-        font-size: 1.15rem;
-    }
-
-    .inv-biz-address {
-        font-size: 0.8rem;
-    }
-
-    .inv-title-box {
-        text-align: left;
-    }
-
-    .inv-title {
-        font-size: 1.75rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .inv-number {
-        font-size: 0.85rem;
-        margin-bottom: 1rem;
-    }
-
-    .inv-balance-label {
-        font-size: 0.7rem;
-    }
-
-    .inv-balance {
-        font-size: 1.25rem;
-    }
-
-    .inv-meta-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .inv-dates {
-        flex-direction: column;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .inv-date-item {
-        justify-content: space-between;
-    }
-
-    /* Table responsive */
-    .inv-table {
-        font-size: 0.8rem;
-        margin-bottom: 2rem;
-    }
-
-    .inv-table th {
-        padding: 0.6rem 0.5rem;
-        font-size: 0.65rem;
-    }
-
-    .inv-table td {
-        padding: 0.75rem 0.5rem;
-    }
-
-    .inv-item-name {
-        font-size: 0.8rem;
-    }
-
-    .inv-item-desc {
-        font-size: 0.7rem;
-    }
-
-    .inv-td-num {
-        font-size: 0.8rem;
-    }
-
-    .inv-footer {
-        flex-direction: column;
-        gap: 2rem;
-    }
-
-    .inv-summary {
-        width: 100%;
-    }
-
-    .summary-due span:last-child {
-        font-size: 1.1rem;
-    }
-
-    .inv-terms {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
+        padding: 0.75rem;
     }
 
     /* Sidebar adjustments */
@@ -915,62 +781,6 @@
     .app-document {
         padding: 0.5rem;
     }
-
-    .invoice-paper {
-        padding: 1rem;
-        border-radius: 6px;
-    }
-
-    .inv-title {
-        font-size: 1.5rem;
-    }
-
-    .inv-balance {
-        font-size: 1.1rem;
-    }
-
-    .inv-biz-name {
-        font-size: 1rem;
-    }
-
-    .inv-client-name {
-        font-size: 0.95rem;
-    }
-
-    .inv-client-address {
-        font-size: 0.8rem;
-    }
-
-    /* Stack table columns for very small screens */
-    .inv-table th:first-child,
-    .inv-table td:first-child {
-        display: none;
-    }
-
-    .inv-table th,
-    .inv-table td {
-        padding: 0.5rem 0.35rem;
-    }
-
-    .summary-row {
-        font-size: 0.8rem;
-    }
-
-    .summary-row.total {
-        font-size: 0.95rem;
-    }
-
-    .summary-due {
-        padding: 0.75rem 1rem;
-    }
-
-    .summary-due span:first-child {
-        font-size: 0.75rem;
-    }
-
-    .summary-due span:last-child {
-        font-size: 1rem;
-    }
 }
 
 /* Print Styles */
@@ -999,8 +809,15 @@
         overflow: visible;
     }
 
+    .invoice-scale-wrapper {
+        transform: none !important;
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+
     .invoice-paper {
         box-shadow: none;
+        width: 100% !important;
         max-width: none;
         border-radius: 0;
         padding: 0;
