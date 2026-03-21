@@ -415,7 +415,7 @@ export default function InvoiceApp() {
     return (
         <div className="app-container">
             <div className="app-topbar">
-                <Link to="/" className="topbar-brand">
+                <Link to="/dashboard" className="topbar-brand">
                     <div className="brand-icon"><Receipt size={18} /></div>
                     InvoiceKit
                 </Link>

@@ -7,6 +7,12 @@ export default function Landing() {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Redirect logged-in users directly to dashboard
+        if (localStorage.getItem('invoicekit_auth') === 'true') {
+            navigate('/dashboard');
+            return;
+        }
+
         // Setup the intersection observer for scroll reveal animations
         const observerOptions = { threshold: 0.1 };
         const observer = new IntersectionObserver((entries) => {

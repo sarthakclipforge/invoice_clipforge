@@ -40,7 +40,7 @@ export default function Dashboard() {
         <div style={{ minHeight: '100vh', background: 'var(--color-background)' }}>
             {/* Top Navbar */}
             <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface)', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--color-text)' }}>
+                <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--color-text)' }}>
                     <Receipt size={22} color="var(--color-cta)" />
                     <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '1.1rem' }}>Invoice<span style={{ color: 'var(--color-cta)' }}>Kit</span></span>
                 </Link>
