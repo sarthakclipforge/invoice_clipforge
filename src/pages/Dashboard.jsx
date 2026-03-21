@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Receipt, Plus, LogOut, ArrowRight, FileText, Clock } from 'lucide-react'
+import { Receipt, Plus, LogOut, ArrowRight, FileText, Clock, Settings as SettingsIcon } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { getAllInvoicesLocal, clearSession } from '../lib/db'
 
@@ -22,44 +22,57 @@ export default function Dashboard() {
     }, [])
 
     useEffect(() => {
-        let cancelled = false
+        let cancelled = false;
 
         async function loadInvoices() {
-            // Step 1 — load from IndexedDB immediately (works offline)
-            const local = await getAllInvoicesLocal()
-            if (!cancelled && local.length > 0) {
-                setInvoices(local.map(inv => ({
-                    id: inv.supabaseId,
-                    invoice_number: inv.invoiceNumber,
-                    client_name: inv.clientName,
-                    total_amount: inv.totalAmount,
-                    currency: inv.currency,
-                    created_at: inv.updatedAt,
-                    updated_at: inv.updatedAt,
-                })))
-                setLoading(false)
+            setLoading(true);
+
+            // Step 1 — try IndexedDB first (instant, works offline)
+            try {
+                const local = await getAllInvoicesLocal();
+                if (!cancelled && local.length > 0) {
+                    setInvoices(local.map(inv => ({
+                        id: inv.supabaseId,
+                        invoice_number: inv.invoiceNumber,
+                        client_name: inv.clientName,
+                        total_amount: inv.totalAmount,
+                        currency: inv.currency,
+                        created_at: inv.updatedAt,
+                        updated_at: inv.updatedAt,
+                    })));
+                    setLoading(false);
+                }
+            } catch {
+                // IndexedDB unavailable — continue to Supabase
             }
 
-            // Step 2 — refresh from Supabase if online
+            // Step 2 — always attempt Supabase if online, regardless of local results
             if (navigator.onLine) {
-                const { data, error } = await supabase
-                    .from('invoices')
-                    .select('*')
-                    .order('created_at', { ascending: false })
+                try {
+                    const { data, error } = await supabase
+                        .from('invoices')
+                        .select('*')
+                        .order('created_at', { ascending: false });
 
-                if (!cancelled && !error && data) {
-                    setInvoices(data)
-                    setLoading(false)
+                    if (!cancelled) {
+                        if (!error && data) {
+                            setInvoices(data);
+                        }
+                        // Always stop loading here — Supabase is the source of truth when online
+                        setLoading(false);
+                    }
+                } catch {
+                    if (!cancelled) setLoading(false);
                 }
-            } else if (!cancelled && local.length === 0) {
-                // Truly offline and no local data
-                setLoading(false)
+            } else {
+                // Offline and IndexedDB was empty
+                if (!cancelled) setLoading(false);
             }
         }
 
-        loadInvoices()
-        return () => { cancelled = true }
-    }, [])
+        loadInvoices();
+        return () => { cancelled = true; };
+    }, []);
 
     const handleLogout = async () => {
         await clearSession();
@@ -79,6 +92,9 @@ export default function Dashboard() {
                     <Link to="/app" className="btn-primary" style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
                         <Plus size={14} /> New Invoice
                     </Link>
+                    <button className="btn-secondary" onClick={() => navigate('/settings')} style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
+                        <SettingsIcon size={14} /> Settings
+                    </button>
                     <button onClick={handleLogout} style={{ background: 'transparent', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
                         <LogOut size={14} /> Logout
                     </button>

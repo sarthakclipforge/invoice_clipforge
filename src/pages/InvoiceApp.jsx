@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { saveInvoiceLocally, getInvoiceBySupabaseId, db } from "../lib/db";
+import { getActiveApiKey, getActiveProvider, getActiveModel, loadSettings } from '../lib/settings';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import "../styles/invoice.css";
@@ -46,7 +47,6 @@ const INIT = {
     logo: null,
     lineItems: INITIAL_ITEMS,
     mode: "edit",
-    aiKey: "",
     aiPrompt: "",
     aiLoading: false,
     aiError: "",
@@ -155,31 +155,140 @@ export default function InvoiceApp() {
     const removeItem = id => setS(p => ({ ...p, lineItems: p.lineItems.filter(i => i.id !== id) }));
     const updateItem = (id, k, v) => setS(p => ({ ...p, lineItems: p.lineItems.map(i => i.id === id ? { ...i, [k]: v } : i) }));
 
-    const generate = async () => {
-        if (!navigator.onLine) {
-            setS(p => ({ ...p, aiError: 'AI generation requires an internet connection.', aiLoading: false }));
+    async function handleAIGenerate() {
+        if (!s.aiPrompt) return;
+
+        const apiKey = getActiveApiKey();
+        if (!apiKey) {
+            setS(p => ({
+                ...p,
+                aiError: 'No API key found. Add your key in Settings.',
+                aiLoading: false,
+            }));
             return;
         }
-        if (!s.aiKey || !s.aiPrompt) return;
-        setS(p => ({ ...p, aiLoading: true, aiError: "" }));
-        try {
-            const res = await fetch("https://api.anthropic.com/v1/messages", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "x-api-key": s.aiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-                body: JSON.stringify({
-                    model: "claude-sonnet-4-20250514", max_tokens: 800,
-                    system: 'You are an invoice assistant. Generate 3–5 professional line items for a project brief. Respond ONLY with a JSON array: [{"name":string,"description":string,"qty":number,"rate":number}]. No markdown.',
-                    messages: [{ role: "user", content: s.aiPrompt }],
-                }),
-            });
-            const data = await res.json();
-            const text = data.content?.map(b => b.text || "").join("") || "";
-            const items = JSON.parse(text.replace(/```json|```/g, "").trim());
-            setS(p => ({ ...p, aiLoading: false, lineItems: items.map(it => ({ id: nextId.current++, ...it })) }));
-        } catch (err) {
-            setS(p => ({ ...p, aiLoading: false, aiError: err.message || "Generation failed." }));
+
+        if (!navigator.onLine) {
+            setS(p => ({
+                ...p,
+                aiError: 'AI generation requires an internet connection.',
+                aiLoading: false,
+            }));
+            return;
         }
-    };
+
+        setS(p => ({ ...p, aiLoading: true, aiError: '' }));
+
+        const provider = getActiveProvider();
+        const modelId  = getActiveModel();
+
+        const systemPrompt = 'You are an invoice assistant. Given a project brief, generate 3–5 professional line items. Respond ONLY with a valid JSON array: [{"name":string,"description":string,"qty":number,"rate":number}]. No markdown, no preamble, no explanation.';
+
+        try {
+            let items = [];
+
+            if (provider.id === 'anthropic') {
+                const res = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01',
+                        'anthropic-dangerous-direct-browser-access': 'true',
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        max_tokens: 800,
+                        system: systemPrompt,
+                        messages: [{ role: 'user', content: s.aiPrompt }],
+                    }),
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
+                const text = data.content?.map(b => b.text || '').join('') || '';
+                items = JSON.parse(text.replace(/```json|```/g, '').trim());
+
+            } else if (provider.id === 'openai') {
+                const res = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        max_tokens: 800,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: s.aiPrompt },
+                        ],
+                    }),
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
+                const text = data.choices?.[0]?.message?.content || '';
+                items = JSON.parse(text.replace(/```json|```/g, '').trim());
+
+            } else if (provider.id === 'google') {
+                const res = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            systemInstruction: { parts: [{ text: systemPrompt }] },
+                            contents: [{ parts: [{ text: s.aiPrompt }] }],
+                            generationConfig: { maxOutputTokens: 800 },
+                        }),
+                    }
+                );
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                items = JSON.parse(text.replace(/```json|```/g, '').trim());
+
+            } else if (provider.id === 'groq') {
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        max_tokens: 800,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: s.aiPrompt },
+                        ],
+                    }),
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
+                const text = data.choices?.[0]?.message?.content || '';
+                items = JSON.parse(text.replace(/```json|```/g, '').trim());
+            }
+
+            setS(p => ({
+                ...p,
+                aiLoading: false,
+                lineItems: items.map(it => ({
+                    id: nextId.current++,
+                    name: it.name,
+                    description: it.description,
+                    qty: it.qty,
+                    rate: it.rate,
+                })),
+            }));
+
+        } catch (err) {
+            setS(p => ({
+                ...p,
+                aiLoading: false,
+                aiError: err.message || 'Generation failed. Check your API key in Settings.',
+            }));
+        }
+    }
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -424,15 +533,42 @@ export default function InvoiceApp() {
                 </button>
             </div>
 
-            <SectionHead title="AI Assistant" />
-            <div className="ai-box">
-                <div className="ai-desc">Describe your project, and AI will automatically fill in professional line items.</div>
-                <Field label="Anthropic Key" value={s.aiKey} onChange={upd("aiKey")} placeholder="sk-ant-api…" type="password" />
-                <Field label="Project Brief" value={s.aiPrompt} onChange={upd("aiPrompt")} placeholder="e.g. UX Audit for SaaS app" rows={2} />
-                {s.aiError && <div style={{ color: '#dc2626', fontSize: '0.75rem', padding: '0.5rem', background: '#fef2f2', borderRadius: '6px' }}>{s.aiError}</div>}
-                <button onClick={generate} disabled={s.aiLoading || !s.aiKey || !s.aiPrompt} className="ai-btn">
-                    <Sparkles size={16} />
-                    {s.aiLoading ? "Generating..." : "Generate Items"}
+            <div className="ai-assist-panel">
+                <div className="ai-assist-header">
+                    <span className="ai-assist-title">AI Assist</span>
+                    <span className="ai-assist-provider">{getActiveProvider().name}</span>
+                </div>
+
+                {!getActiveApiKey() && (
+                    <div className="ai-no-key-warning">
+                        No API key configured.{' '}
+                        <span
+                            className="ai-no-key-link"
+                            onClick={() => navigate('/settings')}
+                        >
+                            Add one in Settings →
+                        </span>
+                    </div>
+                )}
+
+                <textarea
+                    className="field-input ai-prompt-input"
+                    placeholder="Describe your project, e.g. 'Brand identity and website for a law firm'"
+                    value={s.aiPrompt}
+                    onChange={e => setS(p => ({ ...p, aiPrompt: e.target.value }))}
+                    rows={3}
+                />
+
+                {s.aiError && (
+                    <p className="ai-error-msg">{s.aiError}</p>
+                )}
+
+                <button
+                    className="btn-primary ai-generate-btn"
+                    onClick={handleAIGenerate}
+                    disabled={s.aiLoading || !s.aiPrompt || !getActiveApiKey()}
+                >
+                    {s.aiLoading ? 'Generating…' : '✦ Generate Line Items'}
                 </button>
             </div>
 
