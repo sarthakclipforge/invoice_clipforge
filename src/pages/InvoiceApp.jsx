@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save, ChevronLeft, Eye, Edit3 } from "lucide-react";
+import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save, ChevronLeft, Eye, Edit2 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { saveInvoiceLocally, getInvoiceBySupabaseId, db } from "../lib/db";
 import { getActiveApiKey, getActiveProvider, getActiveModel, loadSettings } from '../lib/settings';
@@ -80,6 +80,7 @@ export default function InvoiceApp() {
     const [s, setS] = useState(INIT);
     const [isSaving, setIsSaving] = useState(false);
     const [downloading, setDownloading] = useState(false);
+    const [savedFeedback, setSavedFeedback] = useState(false);
     const fileRef = useRef();
     const invoiceRef = useRef(null);
     const nextId = useRef(3);
@@ -352,6 +353,8 @@ export default function InvoiceApp() {
             alert('Error saving invoice: ' + err.message);
         } finally {
             setIsSaving(false);
+            setSavedFeedback(true);
+            setTimeout(() => setSavedFeedback(false), 2000);
         }
     };
 
@@ -719,82 +722,97 @@ export default function InvoiceApp() {
 
     return (
         <div style={{ minHeight: '100dvh', background: 'var(--color-bg)' }}>
-            <header className="ik-topbar ik-editor-topbar">
-                <div className="ik-topbar-brand">
-                    <button 
+            <header className="ik-topbar">
+                {/* Left — back button + brand */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button
+                        className="btn-secondary"
                         onClick={() => navigate('/dashboard')}
+                        style={{ padding: '0 10px', minWidth: 'unset' }}
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+                    <div className="ik-topbar-brand">
+                        <div className="ik-topbar-logo">
+                            <Receipt size={14} />
+                        </div>
+                        <span className="ik-topbar-name">InvoiceKit</span>
+                    </div>
+                </div>
+
+                {/* Centre — Edit / Preview pill toggle */}
+                <div style={{
+                    display: 'flex',
+                    background: 'var(--color-surface-lowest)',
+                    borderRadius: 999,
+                    padding: 3,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    gap: 2,
+                }}>
+                    <button
+                        onClick={() => upd('mode')('edit')}
                         style={{
-                            background: 'transparent',
+                            padding: '5px 18px',
+                            borderRadius: 999,
                             border: 'none',
-                            color: 'var(--color-text-muted)',
+                            background: s.mode === 'edit' ? 'var(--color-indigo)' : 'transparent',
+                            color: s.mode === 'edit' ? '#fff' : 'var(--color-text-muted)',
+                            fontFamily: 'var(--font-heading)',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
                             cursor: 'pointer',
+                            transition: 'all var(--transition-base)',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            marginRight: 8,
-                            padding: 4,
-                            borderRadius: 6,
+                            gap: 5,
                         }}
                     >
-                        <ChevronLeft size={18} />
+                        <Edit2 size={11} /> Edit
                     </button>
-                    <div className="ik-topbar-logo"><Receipt size={14} /></div>
-                    <span className="ik-topbar-name editor-brand-name">InvoiceKit</span>
-                    <span className="editor-mode-label">
-                        {s.mode === 'edit' ? 'Editor' : 'Preview'}
-                    </span>
+                    <button
+                        onClick={() => upd('mode')('preview')}
+                        style={{
+                            padding: '5px 18px',
+                            borderRadius: 999,
+                            border: 'none',
+                            background: s.mode === 'preview' ? 'var(--color-indigo)' : 'transparent',
+                            color: s.mode === 'preview' ? '#fff' : 'var(--color-text-muted)',
+                            fontFamily: 'var(--font-heading)',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
+                            cursor: 'pointer',
+                            transition: 'all var(--transition-base)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5,
+                        }}
+                    >
+                        <Eye size={11} /> Preview
+                    </button>
                 </div>
-                
-                <div className="editor-topbar-controls">
-                    <div className="editor-topbar-toggle">
-                        <button
-                            onClick={() => upd("mode")("edit")}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: 6,
-                                background: s.mode === 'edit' ? 'var(--color-surface-high)' : 'transparent',
-                                color: s.mode === 'edit' ? '#fff' : 'var(--color-text-muted)',
-                                border: 'none',
-                                padding: '4px 12px',
-                                borderRadius: 7,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                fontFamily: 'var(--font-heading)',
-                                cursor: 'pointer',
-                                flexShrink: 0,
-                                transition: 'all var(--transition-fast)',
-                            }}
-                        >
-                            <Edit3 size={14} /> <span className="editor-hide-mobile">EDIT</span>
-                        </button>
-                        <button
-                            onClick={() => upd("mode")("preview")}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: 6,
-                                background: s.mode === 'preview' ? 'var(--color-surface-high)' : 'transparent',
-                                color: s.mode === 'preview' ? '#fff' : 'var(--color-text-muted)',
-                                border: 'none',
-                                padding: '4px 12px',
-                                borderRadius: 7,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                fontFamily: 'var(--font-heading)',
-                                cursor: 'pointer',
-                                flexShrink: 0,
-                                transition: 'all var(--transition-fast)',
-                            }}
-                        >
-                            <Eye size={14} /> <span className="editor-hide-mobile">PREVIEW</span>
-                        </button>
-                    </div>
 
-                    <div className="editor-topbar-actions">
-                        <button className="btn-secondary" onClick={handleSave} disabled={isSaving}>
-                            <Save size={14} /> <span className="editor-hide-mobile">{isSaving ? "Saving..." : "Save"}</span>
-                        </button>
-                        <button className="btn-primary" onClick={handleDownload} disabled={downloading}>
-                            <Download size={14} /> <span className="editor-hide-mobile">PDF</span>
-                        </button>
-                    </div>
+                {/* Right — Save + Download */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                        className={`btn-secondary ${savedFeedback ? 'btn-saved' : ''}`}
+                        onClick={handleSave}
+                        disabled={isSaving}
+                    >
+                        <Save size={13} />
+                        {isSaving ? 'Saving…' : savedFeedback ? 'Saved ✓' : 'Save'}
+                    </button>
+                    <button
+                        className="btn-primary"
+                        onClick={handleDownload}
+                        disabled={downloading}
+                    >
+                        <Download size={13} />
+                        {downloading ? 'Generating…' : 'Download PDF'}
+                    </button>
                 </div>
             </header>
 
