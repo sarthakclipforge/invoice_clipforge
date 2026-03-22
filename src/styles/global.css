@@ -713,3 +713,6 @@ main {
     padding-bottom: calc(60px + env(safe-area-inset-bottom)) !important;
   }
 }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (min-width: 768px) { .mobile-only { display: none !important; } }
