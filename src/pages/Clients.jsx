@@ -193,11 +193,9 @@ export default function Clients() {
         {/* Page header */}
         <div style={{
           display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
           marginBottom: 24,
-          gap: 12,
-          flexWrap: 'wrap',
+          gap: 4,
         }}>
           <div>
             <h1 style={{
@@ -210,8 +208,9 @@ export default function Clients() {
               {clients.length} client{clients.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative' }}>
+          {/* search + button row sits below title, full width */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', marginTop: 12 }}>
+            <div style={{ position: 'relative', flex: 1 }}>
               <Search size={13} style={{
                 position: 'absolute', left: 10,
                 top: '50%', transform: 'translateY(-50%)',
@@ -222,21 +221,21 @@ export default function Clients() {
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 style={{
-                  height: 34, paddingLeft: 30, paddingRight: 12,
+                  width: '100%', height: 38,
+                  paddingLeft: 32, paddingRight: 12,
                   background: '#1E2130',
                   border: '1px solid #2A2D3A',
                   borderRadius: 8,
                   color: '#e2e2eb', fontSize: 13,
                   fontFamily: "'Inter', sans-serif",
-                  outline: 'none', width: 180,
-                  boxSizing: 'border-box',
+                  outline: 'none', boxSizing: 'border-box',
                 }}
               />
             </div>
             <button
               onClick={() => setIsModalOpen(true)}
               style={{
-                height: 34, padding: '0 14px',
+                height: 38, padding: '0 14px',
                 borderRadius: 10, border: 'none',
                 background: 'linear-gradient(145deg, #c0c1ff 0%, #8083ff 100%)',
                 color: '#0d0096',
@@ -245,7 +244,7 @@ export default function Clients() {
                 letterSpacing: '0.06em', textTransform: 'uppercase',
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 6,
-                whiteSpace: 'nowrap',
+                whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               <Plus size={13} />
