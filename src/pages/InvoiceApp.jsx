@@ -834,20 +834,26 @@ export default function InvoiceApp() {
                   <button
                     className="topbar-toggle-mobile"
                     onClick={() => upd('mode')(s.mode === 'edit' ? 'preview' : 'edit')}
-                    style={{
-                      width: 32, height: 32,
-                      borderRadius: 8,
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      background: s.mode === 'preview' ? 'rgba(99,102,241,0.2)' : 'transparent',
-                      color: s.mode === 'preview' ? '#c0c1ff' : '#e2e2eb',
-                      cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      transition: 'all 200ms ease',
-                      flexShrink: 0,
-                    }}
                     title={s.mode === 'edit' ? 'Preview invoice' : 'Back to edit'}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      background: s.mode === 'preview' ? '#6366F1' : '#1e1f26',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      transition: 'all 200ms ease',
+                      padding: 0,
+                    }}
                   >
-                    {s.mode === 'edit' ? <Eye size={15} /> : <Edit2 size={15} />}
+                    {s.mode === 'edit'
+                      ? <Eye size={16} color="#ffffff" strokeWidth={2} />
+                      : <Edit2 size={16} color="#ffffff" strokeWidth={2} />
+                    }
                   </button>
 
                 </div>
