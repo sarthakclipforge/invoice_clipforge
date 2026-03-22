@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, ChevronRight, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { getAllInvoicesLocal, clearSession } from '../lib/db'
 
@@ -10,6 +10,17 @@ export default function Dashboard() {
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+    async function handleDeleteInvoice(e, id) {
+      e.stopPropagation() // prevent navigating to the invoice
+      if (!window.confirm('Delete this invoice? This cannot be undone.')) return
+      try {
+        await supabase.from('invoices').delete().eq('id', id)
+        setInvoices(prev => prev.filter(inv => inv.id !== id))
+      } catch (err) {
+        console.error('Delete failed:', err)
+      }
+    }
 
     useEffect(() => {
         const goOnline = () => setIsOnline(true)
@@ -287,6 +298,24 @@ export default function Dashboard() {
                     ? new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                     : '—'}
                 </div>
+                
+                {/* Delete button */}
+                <button
+                  onClick={e => handleDeleteInvoice(e, inv.id)}
+                  style={{
+                    background: 'none', border: 'none',
+                    cursor: 'pointer', color: '#6B7280',
+                    padding: 6, borderRadius: 6,
+                    display: 'flex', flexShrink: 0,
+                    transition: 'color 150ms ease',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#ffb4ab'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#6B7280'}
+                  title="Delete invoice"
+                >
+                  <Trash2 size={14} />
+                </button>
+
                 <ChevronRight size={15} color="#464554" style={{ flexShrink: 0 }} />
               </div>
             ))}
