@@ -122,24 +122,22 @@ export default function Clients() {
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--color-bg)' }}>
-      {/* Topbar */}
-      <header className="ik-topbar">
+      {/* Mobile-only Topbar */}
+      <header className="ik-topbar ik-topbar-mobile-only">
         <div className="ik-topbar-brand">
           <div className="ik-topbar-logo"><Receipt size={14} /></div>
           <span className="ik-topbar-name">InvoiceKit</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className="btn-secondary" onClick={() => navigate('/settings')}>
-            <Settings size={14} /> Settings
-          </button>
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
-            <Plus size={14} /> New Client
-          </button>
         </div>
       </header>
 
       {/* Sidebar */}
       <aside className="ik-sidebar">
+        {/* Sidebar Brand (Desktop) */}
+        <div className="ik-sidebar-brand">
+          <div className="ik-topbar-logo"><Receipt size={14} /></div>
+          <span className="ik-topbar-name">InvoiceKit</span>
+        </div>
+
         <div className="ik-sidebar-section-label">Navigation</div>
         <button className="ik-nav-item" onClick={() => navigate('/dashboard')}>
           <LayoutDashboard size={18} /> Invoices

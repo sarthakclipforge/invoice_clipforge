@@ -128,9 +128,9 @@ body {
 .ik-sidebar {
   position: fixed;
   left: 0;
-  top: 56px;
+  top: 0;
   width: 240px;
-  height: calc(100vh - 56px);
+  height: 100dvh;
   background: var(--color-surface-low);
   border-right: 1px solid var(--color-border);
   overflow-y: auto;
@@ -140,6 +140,22 @@ body {
   flex-direction: column;
 }
 .ik-sidebar::-webkit-scrollbar { display: none; }
+
+.ik-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 24px 12px;
+  text-decoration: none;
+}
+
+/* Hide mobile-only topbar on desktop screens */
+@media (min-width: 768px) {
+  .ik-topbar-mobile-only {
+    display: none !important;
+  }
+}
+
 
 .ik-sidebar-section-label {
   padding: var(--space-lg) var(--space-lg) var(--space-sm);
@@ -441,7 +457,7 @@ select.field-input { cursor: pointer; }
 /* ── Shared page content wrapper (Dashboard / Clients) ──────────────────── */
 .ik-page-content {
   margin-left: 240px;
-  padding-top: 56px;
+  padding-top: 0;
   padding-bottom: 80px;
   min-height: 100dvh;
 }
