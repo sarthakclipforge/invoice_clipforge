@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, Search, X, Trash2 } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, Search, X, Trash2, ChevronRight } from 'lucide-react'
 import { getAllClientsLocal, deleteClient, upsertClientToSupabase, saveClientLocally } from '../lib/clients'
 import { supabase } from '../lib/supabaseClient'
 
 export default function Clients() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -121,187 +122,460 @@ export default function Clients() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--color-bg)' }}>
-      {/* Mobile-only Topbar */}
-      <header className="ik-topbar ik-topbar-mobile-only">
-        <div className="ik-topbar-brand">
-          <div className="ik-topbar-logo"><Receipt size={14} /></div>
-          <span className="ik-topbar-name">InvoiceKit</span>
+  <div style={{ minHeight: '100dvh', background: '#0F1117' }}>
+
+    {/* ── Topbar ── */}
+    <header style={{
+      position: 'fixed',
+      top: 0, left: 0, right: 0,
+      height: 56,
+      zIndex: 50,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 20px',
+      background: '#111319',
+      borderBottom: '1px solid rgba(255,255,255,0.07)',
+      boxSizing: 'border-box',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{
+          width: 26, height: 26,
+          borderRadius: 6,
+          background: 'linear-gradient(145deg, #c0c1ff 0%, #8083ff 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Receipt size={13} color="#0d0096" />
         </div>
-      </header>
+        <span style={{
+          fontFamily: "'Manrope', sans-serif",
+          fontSize: 16, fontWeight: 700,
+          color: '#ffffff', letterSpacing: '-0.02em',
+        }}>InvoiceKit</span>
+      </div>
+      <button
+        onClick={() => setIsModalOpen(true)}
+        style={{
+          height: 34, padding: '0 14px',
+          borderRadius: 10, border: 'none',
+          background: 'linear-gradient(145deg, #c0c1ff 0%, #8083ff 100%)',
+          color: '#0d0096',
+          fontFamily: "'Manrope', sans-serif",
+          fontSize: 12, fontWeight: 700,
+          letterSpacing: '0.06em', textTransform: 'uppercase',
+          cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}
+      >
+        <Plus size={13} /> New Client
+      </button>
+    </header>
 
-      {/* Sidebar */}
-      <aside className="ik-sidebar">
-        {/* Sidebar Brand (Desktop) */}
-        <div className="ik-sidebar-brand">
-          <div className="ik-topbar-logo"><Receipt size={14} /></div>
-          <span className="ik-topbar-name">InvoiceKit</span>
+    {/* ── Sidebar ── */}
+    <aside style={{
+      position: 'fixed',
+      left: 0, top: 56,
+      width: 200,
+      height: 'calc(100vh - 56px)',
+      background: '#191b22',
+      borderRight: '1px solid rgba(255,255,255,0.05)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflowY: 'auto',
+      zIndex: 40,
+    }}>
+      <div style={{
+        padding: '20px 16px 8px',
+        fontSize: 10, fontWeight: 700,
+        fontFamily: "'Manrope', sans-serif",
+        letterSpacing: '0.12em',
+        color: '#6B7280',
+        textTransform: 'uppercase',
+      }}>Navigation</div>
+
+      {[
+        { label: 'Invoices', icon: <LayoutDashboard size={16} />, path: '/dashboard' },
+        { label: 'Clients',  icon: <Users size={16} />,          path: '/clients'   },
+        { label: 'Settings', icon: <Settings size={16} />,       path: '/settings'  },
+      ].map(item => (
+        <button
+          key={item.path}
+          onClick={() => navigate(item.path)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '9px 14px',
+            margin: '2px 8px',
+            borderRadius: 8,
+            border: 'none',
+            background: location.pathname === item.path
+              ? 'rgba(99,102,241,0.12)' : 'transparent',
+            color: location.pathname === item.path
+              ? '#c0c1ff' : '#6B7280',
+            fontFamily: "'Manrope', sans-serif",
+            fontSize: 13, fontWeight: 500,
+            cursor: 'pointer',
+            textAlign: 'left',
+            width: 'calc(100% - 16px)',
+            borderRight: location.pathname === item.path
+              ? '2px solid #6366F1' : '2px solid transparent',
+            transition: 'all 150ms ease',
+          }}
+        >
+          {item.icon} {item.label}
+        </button>
+      ))}
+    </aside>
+
+    {/* ── Main content ── */}
+    <main style={{
+      marginLeft: 200,
+      paddingTop: 56,
+      minHeight: '100dvh',
+      paddingBottom: 40,
+    }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: '40px 32px' }}>
+
+        {/* Page header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 32,
+        }}>
+          <div>
+            <h1 style={{
+              fontFamily: "'Manrope', sans-serif",
+              fontSize: 28, fontWeight: 800,
+              color: '#ffffff', letterSpacing: '-0.02em',
+              margin: 0, marginBottom: 4,
+            }}>Clients</h1>
+            <p style={{
+              color: '#6B7280', fontSize: 13, margin: 0,
+              fontFamily: "'Inter', sans-serif",
+            }}>
+              {clients.length} client{clients.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={13} style={{
+                position: 'absolute', left: 10,
+                top: '50%', transform: 'translateY(-50%)',
+                color: '#6B7280', pointerEvents: 'none',
+              }} />
+              <input
+                placeholder="Search clients…"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{
+                  height: 34,
+                  paddingLeft: 30, paddingRight: 12,
+                  background: '#1E2130',
+                  border: '1px solid #2A2D3A',
+                  borderRadius: 8,
+                  color: '#e2e2eb',
+                  fontSize: 13,
+                  fontFamily: "'Inter', sans-serif",
+                  outline: 'none',
+                  width: 200,
+                }}
+              />
+            </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              style={{
+                height: 34, padding: '0 14px',
+                borderRadius: 10, border: 'none',
+                background: 'linear-gradient(145deg, #c0c1ff 0%, #8083ff 100%)',
+                color: '#0d0096',
+                fontFamily: "'Manrope', sans-serif",
+                fontSize: 12, fontWeight: 700,
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <Plus size={13} /> New Client
+            </button>
+          </div>
         </div>
 
-        <div className="ik-sidebar-section-label">Navigation</div>
-        <button className="ik-nav-item" onClick={() => navigate('/dashboard')}>
-          <LayoutDashboard size={18} /> Invoices
-        </button>
-        <button className="ik-nav-item active" onClick={() => navigate('/clients')}>
-          <Users size={18} /> Clients
-        </button>
-        <button className="ik-nav-item" onClick={() => navigate('/settings')}>
-          <Settings size={18} /> Settings
-        </button>
-      </aside>
-
-      {/* Main content */}
-      <main className="ik-page-content">
-        <div className="animate-enter ik-page-inner">
-          
-          <div className="ik-page-header">
-            <div>
-              <h1 className="ik-page-title" style={{
-                fontFamily: 'var(--font-heading)',
-                fontWeight: 800,
-                color: '#fff',
-                letterSpacing: '-0.02em',
-                margin: 0,
-                marginBottom: 6,
-              }}>Clients</h1>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: 14, margin: 0 }}>
-                Manage your clients and their billing details.
-              </p>
-            </div>
+        {/* Client list */}
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
+            <div style={{
+              width: 28, height: 28,
+              border: '2px solid rgba(99,102,241,0.2)',
+              borderTopColor: '#6366F1',
+              borderRadius: '50%',
+              animation: 'spin 0.7s linear infinite',
+            }} />
           </div>
-
-          <div style={{ marginBottom: 24, position: 'relative' }}>
-            <Search size={18} style={{ position: 'absolute', left: 14, top: 11, color: 'var(--color-text-muted)' }} />
-            <input 
-              type="text" 
-              className="field-input" 
-              placeholder="Search clients..." 
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              style={{ paddingLeft: 42 }}
-            />
+        ) : filteredClients.length === 0 ? (
+          <div style={{
+            textAlign: 'center', paddingTop: 80,
+            color: '#6B7280',
+            fontFamily: "'Manrope', sans-serif",
+          }}>
+            <Users size={36} style={{ marginBottom: 14, opacity: 0.25 }} />
+            <p style={{ fontSize: 15, fontWeight: 600, margin: 0, marginBottom: 6 }}>
+              {searchTerm ? 'No clients found' : 'No clients yet'}
+            </p>
+            <p style={{ fontSize: 13, margin: 0 }}>
+              {searchTerm ? 'Try a different search.' : 'Add your first client to get started.'}
+            </p>
           </div>
-
-          {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
-              <div className="ik-spinner" />
-            </div>
-          ) : filteredClients.length === 0 ? (
-            <div style={{ textAlign: 'center', paddingTop: 80, color: 'var(--color-text-muted)' }}>
-              <Users size={40} style={{ marginBottom: 16, opacity: 0.3 }} />
-              <p style={{ fontSize: 16, fontWeight: 600, fontFamily: 'var(--font-heading)' }}>No clients found</p>
-              <p style={{ fontSize: 13, marginTop: 6 }}>Add a new client to get started or refine your search.</p>
-            </div>
-          ) : (
-            <div className="ik-client-grid">
-              {filteredClients.map(client => (
-                <div key={client.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: '50%', background: 'var(--color-surface-high)', 
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'var(--color-primary)', fontWeight: 800, fontFamily: 'var(--font-heading)'
-                      }}>
-                        {client.name.substring(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 style={{ margin: 0, fontSize: 15, color: '#fff', fontWeight: 600 }}>{client.name}</h3>
-                        <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-muted)' }}>{client.email || 'No email'}</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => handleDelete(client)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--color-error)', cursor: 'pointer', opacity: 0.8 }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  {(client.address || client.shipAddress) && (
-                    <div style={{ background: 'var(--color-surface)', padding: 12, borderRadius: 8, fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 8 }}>
-                      {client.address && <div style={{ marginBottom: client.shipAddress ? 8 : 0 }}><strong>Bill To:</strong> {client.address}</div>}
-                      {client.shipAddress && <div><strong>Ship To:</strong> {client.shipAddress}</div>}
-                    </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {filteredClients.map(client => (
+              <div
+                key={client.id || client.name}
+                onClick={() => navigate('/app', { state: { prefillClient: client } })}
+                style={{
+                  background: '#1A1D27',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  borderRadius: 12,
+                  padding: '14px 18px',
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  cursor: 'pointer',
+                  transition: 'border-color 150ms ease, transform 150ms ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)'
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
+              >
+                <div style={{
+                  width: 40, height: 40, flexShrink: 0,
+                  borderRadius: 10,
+                  background: 'rgba(99,102,241,0.1)',
+                  border: '1px solid rgba(99,102,241,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Manrope', sans-serif",
+                  fontWeight: 700, fontSize: 14,
+                  color: '#c0c1ff',
+                }}>
+                  {client.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontFamily: "'Manrope', sans-serif",
+                    fontWeight: 700, fontSize: 14,
+                    color: '#ffffff', marginBottom: 2,
+                  }}>{client.name}</div>
+                  {client.email && (
+                    <div style={{
+                      fontSize: 12, color: '#6B7280',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      fontFamily: "'Inter', sans-serif",
+                    }}>{client.email}</div>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
-
-        </div>
-      </main>
-
-      {/* Modal */}
-      {isModalOpen && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', padding: 24
-        }}>
-          <div className="card animate-enter" style={{ width: '100%', maxWidth: 480, padding: 32, position: 'relative' }}>
-            <button 
-              onClick={() => setIsModalOpen(false)}
-              style={{ position: 'absolute', top: 24, right: 24, background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}
-            >
-              <X size={20} />
-            </button>
-            <h2 style={{ fontFamily: 'var(--font-heading)', margin: '0 0 24px 0', fontSize: 24, color: '#fff' }}>New Client</h2>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label className="field-label">Client Name *</label>
-                <input 
-                  type="text" className="field-input" 
-                  value={formData.name} onChange={e => setFormData(f => ({...f, name: e.target.value}))}
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="field-label">Email Address</label>
-                <input 
-                  type="email" className="field-input" 
-                  value={formData.email} onChange={e => setFormData(f => ({...f, email: e.target.value}))}
-                />
-              </div>
-              <div>
-                <label className="field-label">Billing Address</label>
-                <textarea 
-                  className="field-input" rows={3}
-                  value={formData.address} onChange={e => setFormData(f => ({...f, address: e.target.value}))}
-                />
-              </div>
-              <div>
-                <label className="field-label">Shipping Address</label>
-                <textarea 
-                  className="field-input" rows={3}
-                  value={formData.shipAddress} onChange={e => setFormData(f => ({...f, shipAddress: e.target.value}))}
-                />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16 }}>
-                <button className="btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button className="btn-primary" onClick={handleCreateClient} disabled={!formData.name.trim() || isSaving}>
-                  {isSaving ? 'Saving...' : 'Save Client'}
+                <button
+                  onClick={e => { e.stopPropagation(); handleDelete(client) }}
+                  style={{
+                    background: 'none', border: 'none',
+                    cursor: 'pointer', color: '#6B7280',
+                    padding: 6, borderRadius: 6,
+                    display: 'flex', flexShrink: 0,
+                    transition: 'color 150ms ease',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = '#ffb4ab'}
+                  onMouseLeave={e => e.currentTarget.style.color = '#6B7280'}
+                >
+                  <Trash2 size={14} />
                 </button>
+                <ChevronRight size={15} color="#464554" style={{ flexShrink: 0 }} />
               </div>
-            </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
+
+    {/* ── Mobile bottom nav ── */}
+    <nav style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0,
+      zIndex: 50,
+      display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+      padding: '8px 0',
+      paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
+      background: 'rgba(17,19,25,0.9)',
+      backdropFilter: 'blur(20px)',
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+    }} className="mobile-only">
+      {[
+        { label: 'Invoices', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
+        { label: 'Clients',  icon: <Users size={20} />,           path: '/clients'   },
+        { label: 'New',      icon: <Plus size={20} />,            path: '/app'       },
+        { label: 'Settings', icon: <Settings size={20} />,        path: '/settings'  },
+      ].map(item => (
+        <button
+          key={item.path}
+          onClick={() => navigate(item.path)}
+          style={{
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', gap: 3,
+            padding: '4px 16px',
+            border: 'none', background: 'transparent',
+            color: location.pathname === item.path ? '#c0c1ff' : '#6B7280',
+            fontFamily: "'Manrope', sans-serif",
+            fontSize: 10, fontWeight: 700,
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            cursor: 'pointer',
+            transition: 'color 150ms ease',
+          }}
+        >
+          {item.icon}
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </nav>
+
+    {/* ── Add Client Modal ── */}
+    {isModalOpen && (
+      <div
+        onClick={e => { if (e.target === e.currentTarget) setIsModalOpen(false) }}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          background: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24,
+        }}
+      >
+        <div style={{
+          background: '#191b22',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 16,
+          padding: 32,
+          width: '100%', maxWidth: 460,
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', marginBottom: 24,
+          }}>
+            <h2 style={{
+              fontFamily: "'Manrope', sans-serif",
+              fontSize: 18, fontWeight: 700,
+              color: '#ffffff', margin: 0,
+            }}>New Client</h2>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              style={{
+                background: 'none', border: 'none',
+                cursor: 'pointer', color: '#6B7280',
+                display: 'flex', padding: 4,
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {[
+              { label: 'Name *', key: 'name', placeholder: 'Client or company name', type: 'text' },
+              { label: 'Email',  key: 'email', placeholder: 'billing@client.com',    type: 'email' },
+            ].map(f => (
+              <div key={f.key}>
+                <label style={{
+                  display: 'block', fontSize: 10, fontWeight: 700,
+                  fontFamily: "'Manrope', sans-serif",
+                  letterSpacing: '0.1em', textTransform: 'uppercase',
+                  color: '#6B7280', marginBottom: 6,
+                }}>{f.label}</label>
+                <input
+                  type={f.type}
+                  placeholder={f.placeholder}
+                  value={formData[f.key]}
+                  onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}
+                  style={{
+                    width: '100%', height: 38,
+                    background: '#1E2130',
+                    border: '1px solid #2A2D3A',
+                    borderRadius: 8, padding: '0 12px',
+                    color: '#e2e2eb', fontSize: 13,
+                    fontFamily: "'Inter', sans-serif",
+                    outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            ))}
+            {[
+              { label: 'Billing Address', key: 'address',     placeholder: 'Street, City, ZIP, Country' },
+              { label: 'Ship To',         key: 'shipAddress', placeholder: 'Leave blank to use billing address' },
+            ].map(f => (
+              <div key={f.key}>
+                <label style={{
+                  display: 'block', fontSize: 10, fontWeight: 700,
+                  fontFamily: "'Manrope', sans-serif",
+                  letterSpacing: '0.1em', textTransform: 'uppercase',
+                  color: '#6B7280', marginBottom: 6,
+                }}>{f.label}</label>
+                <textarea
+                  rows={3}
+                  placeholder={f.placeholder}
+                  value={formData[f.key]}
+                  onChange={e => setFormData(p => ({ ...p, [f.key]: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    background: '#1E2130',
+                    border: '1px solid #2A2D3A',
+                    borderRadius: 8, padding: '8px 12px',
+                    color: '#e2e2eb', fontSize: 13,
+                    fontFamily: "'Inter', sans-serif",
+                    outline: 'none', resize: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div style={{
+            display: 'flex', gap: 10, justifyContent: 'flex-end',
+            marginTop: 24,
+          }}>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              style={{
+                height: 34, padding: '0 16px',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'transparent', color: '#e2e2eb',
+                fontFamily: "'Manrope', sans-serif",
+                fontSize: 12, fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >Cancel</button>
+            <button
+              onClick={handleCreateClient}
+              disabled={isSaving || !formData.name.trim()}
+              style={{
+                height: 34, padding: '0 16px',
+                borderRadius: 10, border: 'none',
+                background: 'linear-gradient(145deg, #c0c1ff 0%, #8083ff 100%)',
+                color: '#0d0096',
+                fontFamily: "'Manrope', sans-serif",
+                fontSize: 12, fontWeight: 700,
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                cursor: isSaving || !formData.name.trim() ? 'not-allowed' : 'pointer',
+                opacity: isSaving || !formData.name.trim() ? 0.5 : 1,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {isSaving ? 'Saving…' : 'Add Client'}
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
-      {/* Mobile bottom nav */}
-      <nav className="ik-bottom-nav">
-        <button className="ik-bottom-nav-item" onClick={() => navigate('/dashboard')}>
-          <LayoutDashboard size={20} /><span>Invoices</span>
-        </button>
-        <button className="ik-bottom-nav-item active" onClick={() => navigate('/clients')}>
-          <Users size={20} /><span>Clients</span>
-        </button>
-        <button className="ik-bottom-nav-item" onClick={() => navigate('/app')}>
-          <Plus size={20} /><span>New</span>
-        </button>
-        <button className="ik-bottom-nav-item" onClick={() => navigate('/settings')}>
-          <Settings size={20} /><span>Settings</span>
-        </button>
-      </nav>
-    </div>
+  </div>
   )
 }
