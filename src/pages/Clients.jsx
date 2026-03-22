@@ -173,7 +173,7 @@ export default function Clients() {
     </header>
 
     {/* ── Sidebar ── */}
-    <aside style={{
+    <aside className="dash-sidebar" style={{
       position: 'fixed',
       left: 0, top: 56,
       width: 200,
@@ -228,7 +228,7 @@ export default function Clients() {
     </aside>
 
     {/* ── Main content ── */}
-    <main style={{
+    <main className="dash-main" style={{
       marginLeft: 200,
       paddingTop: 56,
       minHeight: '100dvh',
@@ -239,9 +239,11 @@ export default function Clients() {
         {/* Page header */}
         <div style={{
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'space-between',
-          marginBottom: 32,
+          marginBottom: 24,
+          gap: 12,
+          flexWrap: 'wrap',
         }}>
           <div>
             <h1 style={{
@@ -250,14 +252,11 @@ export default function Clients() {
               color: '#ffffff', letterSpacing: '-0.02em',
               margin: 0, marginBottom: 4,
             }}>Clients</h1>
-            <p style={{
-              color: '#6B7280', fontSize: 13, margin: 0,
-              fontFamily: "'Inter', sans-serif",
-            }}>
+            <p style={{ color: '#6B7280', fontSize: 13, margin: 0, fontFamily: "'Inter', sans-serif" }}>
               {clients.length} client{clients.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ position: 'relative' }}>
               <Search size={13} style={{
                 position: 'absolute', left: 10,
@@ -269,16 +268,14 @@ export default function Clients() {
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 style={{
-                  height: 34,
-                  paddingLeft: 30, paddingRight: 12,
+                  height: 34, paddingLeft: 30, paddingRight: 12,
                   background: '#1E2130',
                   border: '1px solid #2A2D3A',
                   borderRadius: 8,
-                  color: '#e2e2eb',
-                  fontSize: 13,
+                  color: '#e2e2eb', fontSize: 13,
                   fontFamily: "'Inter', sans-serif",
-                  outline: 'none',
-                  width: 200,
+                  outline: 'none', width: 180,
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -294,9 +291,11 @@ export default function Clients() {
                 letterSpacing: '0.06em', textTransform: 'uppercase',
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 6,
+                whiteSpace: 'nowrap',
               }}
             >
-              <Plus size={13} /> New Client
+              <Plus size={13} />
+              <span className="dash-new-label">New Client</span>
             </button>
           </div>
         </div>
