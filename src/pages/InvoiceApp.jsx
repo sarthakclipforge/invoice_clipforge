@@ -785,10 +785,10 @@ export default function InvoiceApp() {
 
                     <div className="editor-topbar-actions">
                         <button className="btn-secondary" onClick={handleSave} disabled={isSaving}>
-                            <Save size={14} /> {isSaving ? "Saving..." : "Save"}
+                            <Save size={14} /> <span className="editor-hide-mobile">{isSaving ? "Saving..." : "Save"}</span>
                         </button>
                         <button className="btn-primary" onClick={handleDownload} disabled={downloading}>
-                            <Download size={14} /> PDF
+                            <Download size={14} /> <span className="editor-hide-mobile">PDF</span>
                         </button>
                     </div>
                 </div>

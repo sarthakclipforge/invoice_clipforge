@@ -751,7 +751,8 @@
 
     /* Editor Topbar specific overrides to fit everything on a 375px screen */
     .editor-brand-name,
-    .editor-mode-label {
+    .editor-mode-label,
+    .editor-hide-mobile {
         display: none !important; /* Hide non-essential text */
     }
 
