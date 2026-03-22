@@ -733,3 +733,15 @@ main {
   .dash-main { margin-left: 0 !important; }
   .dash-new-label { display: none; }
 }
+
+/* Mobile: hide desktop pill, show icon toggle */
+@media (max-width: 600px) {
+  .topbar-toggle        { display: none !important; }
+  .topbar-toggle-mobile { display: flex !important; }
+}
+
+/* Desktop: show pill, hide icon toggle */
+@media (min-width: 601px) {
+  .topbar-toggle        { display: flex; }
+  .topbar-toggle-mobile { display: none !important; }
+}

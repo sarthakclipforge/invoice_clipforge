@@ -777,54 +777,79 @@ export default function InvoiceApp() {
                     }}>InvoiceKit</span>
                 </div>
 
-                {/* CENTRE — pill, hidden on small screens */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexShrink: 0,
-                    background: '#0c0e14',
-                    borderRadius: 999,
-                    padding: 3,
-                    border: '1px solid rgba(255,255,255,0.08)',
-                }}
+                {/* CENTRE — pill on desktop, eye icon on mobile */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+
+                  {/* Desktop pill — hidden on mobile via CSS */}
+                  <div
                     className="topbar-toggle"
-                >
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      background: '#0c0e14',
+                      borderRadius: 999,
+                      padding: 3,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
                     <button
-                        onClick={() => upd('mode')('edit')}
-                        style={{
-                            padding: '4px 14px',
-                            borderRadius: 999, border: 'none',
-                            background: s.mode === 'edit' ? '#6366F1' : 'transparent',
-                            color: s.mode === 'edit' ? '#fff' : '#6B7280',
-                            fontFamily: "'Manrope', sans-serif",
-                            fontSize: 11, fontWeight: 700,
-                            letterSpacing: '0.05em', textTransform: 'uppercase',
-                            cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 4,
-                            whiteSpace: 'nowrap',
-                            transition: 'all 200ms ease',
-                        }}
+                      onClick={() => upd('mode')('edit')}
+                      style={{
+                        padding: '4px 14px',
+                        borderRadius: 999, border: 'none',
+                        background: s.mode === 'edit' ? '#6366F1' : 'transparent',
+                        color: s.mode === 'edit' ? '#fff' : '#6B7280',
+                        fontFamily: "'Manrope', sans-serif",
+                        fontSize: 11, fontWeight: 700,
+                        letterSpacing: '0.05em', textTransform: 'uppercase',
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        whiteSpace: 'nowrap',
+                        transition: 'all 200ms ease',
+                      }}
                     >
-                        <Edit2 size={10} /> Edit
+                      <Edit2 size={10} /> Edit
                     </button>
                     <button
-                        onClick={() => upd('mode')('preview')}
-                        style={{
-                            padding: '4px 14px',
-                            borderRadius: 999, border: 'none',
-                            background: s.mode === 'preview' ? '#6366F1' : 'transparent',
-                            color: s.mode === 'preview' ? '#fff' : '#6B7280',
-                            fontFamily: "'Manrope', sans-serif",
-                            fontSize: 11, fontWeight: 700,
-                            letterSpacing: '0.05em', textTransform: 'uppercase',
-                            cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 4,
-                            whiteSpace: 'nowrap',
-                            transition: 'all 200ms ease',
-                        }}
+                      onClick={() => upd('mode')('preview')}
+                      style={{
+                        padding: '4px 14px',
+                        borderRadius: 999, border: 'none',
+                        background: s.mode === 'preview' ? '#6366F1' : 'transparent',
+                        color: s.mode === 'preview' ? '#fff' : '#6B7280',
+                        fontFamily: "'Manrope', sans-serif",
+                        fontSize: 11, fontWeight: 700,
+                        letterSpacing: '0.05em', textTransform: 'uppercase',
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        whiteSpace: 'nowrap',
+                        transition: 'all 200ms ease',
+                      }}
                     >
-                        <Eye size={10} /> Preview
+                      <Eye size={10} /> Preview
                     </button>
+                  </div>
+
+                  {/* Mobile eye/edit icon — hidden on desktop via CSS */}
+                  <button
+                    className="topbar-toggle-mobile"
+                    onClick={() => upd('mode')(s.mode === 'edit' ? 'preview' : 'edit')}
+                    style={{
+                      width: 32, height: 32,
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: s.mode === 'preview' ? 'rgba(99,102,241,0.2)' : 'transparent',
+                      color: s.mode === 'preview' ? '#c0c1ff' : '#6B7280',
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'all 200ms ease',
+                      flexShrink: 0,
+                    }}
+                    title={s.mode === 'edit' ? 'Preview invoice' : 'Back to edit'}
+                  >
+                    {s.mode === 'edit' ? <Eye size={15} /> : <Edit2 size={15} />}
+                  </button>
+
                 </div>
 
                 {/* RIGHT */}
