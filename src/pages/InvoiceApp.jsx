@@ -721,7 +721,14 @@ export default function InvoiceApp() {
     );
 
     return (
-        <div style={{ minHeight: '100dvh', background: 'var(--color-bg)' }}>
+        <div style={{
+            height: '100dvh',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'var(--color-bg)',
+            overflow: 'hidden',
+            paddingTop: 56,
+        }}>
             <header className="ik-topbar">
                 {/* Left — back button + brand */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -816,7 +823,7 @@ export default function InvoiceApp() {
                 </div>
             </header>
 
-            <div className="app-main" data-mode={s.mode} style={{ paddingTop: 56 }}>
+            <div className="app-main" data-mode={s.mode}>
                 {Sidebar}
                 <main className="app-document-container">
                     {InvoiceDoc}

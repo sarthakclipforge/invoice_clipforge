@@ -128,11 +128,10 @@ body {
 
 /* ── Shared sidebar ─────────────────────────────────────────────────────── */
 .ik-sidebar {
-  position: fixed;
-  left: 0;
+  position: relative;
   top: 0;
   width: 240px;
-  height: 100dvh;
+  height: 100%;
   background: var(--color-surface-low);
   border-right: 1px solid var(--color-border);
   overflow-y: auto;
@@ -140,6 +139,7 @@ body {
   scrollbar-width: none;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 .ik-sidebar::-webkit-scrollbar { display: none; }
 
@@ -702,4 +702,14 @@ main {
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+/* ── Mobile: hide sidebar, pad above fixed bottom nav ──────────────────── */
+@media (max-width: 767px) {
+  .ik-sidebar { display: none; }
+
+  /* Push content above the fixed 60px bottom nav */
+  main, [class*="main"] {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+  }
 }
