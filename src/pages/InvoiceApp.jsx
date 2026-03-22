@@ -816,8 +816,8 @@ export default function InvoiceApp() {
                 </div>
             </header>
 
-            <div className="app-main" style={{ paddingTop: 56 }}>
-                {s.mode === 'edit' && Sidebar}
+            <div className="app-main" data-mode={s.mode} style={{ paddingTop: 56 }}>
+                {Sidebar}
                 <main className="app-document-container">
                     {InvoiceDoc}
                 </main>

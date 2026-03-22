@@ -776,9 +776,18 @@
         gap: 4px !important;
     }
 
-    /* Hide document preview on mobile — form is full width */
-    .app-document {
+    /* Mobile mode-aware: edit = sidebar only, preview = document only */
+    .app-main[data-mode="edit"] .app-document-container {
         display: none;
+    }
+
+    .app-main[data-mode="preview"] .app-sidebar {
+        display: none;
+    }
+
+    .app-main[data-mode="preview"] .app-document-container {
+        display: block;
+        width: 100%;
     }
 
     .app-main {
