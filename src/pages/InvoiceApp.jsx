@@ -839,7 +839,7 @@ export default function InvoiceApp() {
                       borderRadius: 8,
                       border: '1px solid rgba(255,255,255,0.12)',
                       background: s.mode === 'preview' ? 'rgba(99,102,241,0.2)' : 'transparent',
-                      color: s.mode === 'preview' ? '#c0c1ff' : '#6B7280',
+                      color: s.mode === 'preview' ? '#c0c1ff' : '#e2e2eb',
                       cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       transition: 'all 200ms ease',
