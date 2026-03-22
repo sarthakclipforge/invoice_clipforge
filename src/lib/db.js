@@ -6,7 +6,7 @@ import Dexie from 'dexie'
 
 export const db = new Dexie('InvoiceKit')
 
-db.version(1).stores({
+db.version(2).stores({
   // Primary invoice store.
   // supabaseId = the UUID from Supabase (null for invoices not yet pushed).
   // localId = Dexie auto-increment PK (used for local routing before first sync).
@@ -15,6 +15,9 @@ db.version(1).stores({
   // Session store — replaces localStorage for PWA persistence.
   // iOS clears localStorage for PWAs inactive >7 days. IndexedDB is more durable.
   session: 'key',
+
+  // Clients store.
+  clients: '++localId, supabaseId, name, email, updatedAt, synced',
 })
 
 // ── Auth helpers ──────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Receipt, Plus, LogOut, ArrowRight, FileText, Clock, Settings as SettingsIcon } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { getAllInvoicesLocal, clearSession } from '../lib/db'
 
@@ -81,88 +81,182 @@ export default function Dashboard() {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--color-background)' }}>
-            {/* Top Navbar */}
-            <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface)', flexWrap: 'wrap', gap: '0.75rem' }}>
-                <Link to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'var(--color-text)' }}>
-                    <Receipt size={22} color="var(--color-cta)" />
-                    <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '1.1rem' }}>Invoice<span style={{ color: 'var(--color-cta)' }}>Kit</span></span>
-                </Link>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Link to="/app" className="btn-primary" style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-                        <Plus size={14} /> New Invoice
-                    </Link>
-                    <button className="btn-secondary" onClick={() => navigate('/settings')} style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-                        <SettingsIcon size={14} /> Settings
-                    </button>
-                    <button onClick={handleLogout} style={{ background: 'transparent', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
-                        <LogOut size={14} /> Logout
-                    </button>
-                </div>
-            </nav>
+  <div style={{ minHeight: '100dvh', background: 'var(--color-bg)' }}>
 
-            {/* Offline banner */}
-            {!isOnline && (
-                <div style={{
-                    background: 'var(--color-cta)',
-                    color: '#fff',
-                    padding: '6px 16px',
-                    fontSize: '13px',
-                    fontFamily: '"Open Sans", sans-serif',
-                    textAlign: 'center',
-                }}>
-                    Offline — showing locally cached invoices. Changes will sync when reconnected.
-                </div>
-            )}
-
-            {/* Main Content */}
-            <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '2rem 1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                    <h2 style={{ fontFamily: 'Poppins, sans-serif', fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 700, letterSpacing: '-0.02em' }}>Recent Invoices</h2>
-                </div>
-
-                {loading ? (
-                    <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--color-text-muted)' }}>
-                        <Clock size={32} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                        <p>Loading invoices...</p>
-                    </div>
-                ) : invoices.length === 0 ? (
-                    <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                        <FileText size={40} color="var(--color-text-muted)" style={{ marginBottom: '1rem' }} />
-                        <h3 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, marginBottom: '0.5rem' }}>No invoices yet</h3>
-                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem', marginBottom: '1.5rem' }}>Create your first invoice to get started.</p>
-                        <Link to="/app" className="btn-primary" style={{ display: 'inline-flex' }}>
-                            Create Invoice <ArrowRight size={16} />
-                        </Link>
-                    </div>
-                ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                        {invoices.map(inv => (
-                            <div
-                                key={inv.id}
-                                className="card"
-                                onClick={() => navigate(`/app/${inv.id}`)}
-                                style={{ cursor: 'pointer' }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                                    <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '0.95rem' }}>
-                                        {inv.invoice_number || 'Untitled'}
-                                    </span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                        {new Date(inv.created_at).toLocaleDateString()}
-                                    </span>
-                                </div>
-                                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
-                                    {inv.client_name || 'No client'}
-                                </p>
-                                <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '1.15rem', color: 'var(--color-cta)' }}>
-                                    {inv.currency || '$'}{Number(inv.total_amount || 0).toLocaleString('en', { minimumFractionDigits: 2 })}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </main>
+    {/* Topbar */}
+    <header className="ik-topbar">
+      <div className="ik-topbar-brand">
+        <div className="ik-topbar-logo">
+          <Receipt size={14} />
         </div>
-    );
+        <span className="ik-topbar-name">InvoiceKit</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button className="btn-secondary" onClick={() => navigate('/settings')}>
+          <Settings size={14} /> Settings
+        </button>
+        <button className="btn-primary" onClick={() => navigate('/app')}>
+          <Plus size={14} /> New Invoice
+        </button>
+      </div>
+    </header>
+
+    {/* Sidebar */}
+    <aside className="ik-sidebar">
+      <div className="ik-sidebar-section-label">Navigation</div>
+      <button className="ik-nav-item active" onClick={() => navigate('/dashboard')}>
+        <LayoutDashboard size={18} /> Invoices
+      </button>
+      <button className="ik-nav-item" onClick={() => navigate('/clients')}>
+        <Users size={18} /> Clients
+      </button>
+      <button className="ik-nav-item" onClick={() => navigate('/settings')}>
+        <Settings size={18} /> Settings
+      </button>
+    </aside>
+
+    {/* Offline banner */}
+    {!isOnline && (
+      <div className="offline-banner">
+        Offline — showing locally cached invoices. Changes will sync when reconnected.
+      </div>
+    )}
+
+    {/* Main content */}
+    <main className="ik-page-content">
+      <div className="animate-enter ik-page-inner">
+
+        {/* Page header */}
+        <div className="ik-page-header">
+          <div>
+            <h1 className="ik-page-title" style={{
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 800,
+              color: '#fff',
+              letterSpacing: '-0.02em',
+              margin: 0,
+              marginBottom: 6,
+            }}>Dashboard</h1>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: 14, margin: 0 }}>
+              Manage your billing and track payments.
+            </p>
+          </div>
+          <button className="btn-primary" onClick={() => navigate('/app')}>
+            <Plus size={15} /> New Invoice
+          </button>
+        </div>
+
+        {/* Invoice list */}
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
+            <div className="ik-spinner" />
+          </div>
+        ) : invoices.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            paddingTop: 80,
+            color: 'var(--color-text-muted)',
+            fontFamily: 'var(--font-heading)',
+          }}>
+            <Receipt size={40} style={{ marginBottom: 16, opacity: 0.3 }} />
+            <p style={{ fontSize: 16, fontWeight: 600 }}>No invoices yet</p>
+            <p style={{ fontSize: 13, marginTop: 6 }}>Create your first invoice to get started.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 180px 120px 100px',
+              padding: '0 20px',
+              marginBottom: 4,
+            }}>
+              {['Invoice', 'Client', 'Amount', 'Date'].map(h => (
+                <span key={h} style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-heading)',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-text-muted)',
+                }}>{h}</span>
+              ))}
+            </div>
+            {invoices.map((inv) => (
+              <div
+                key={inv.id}
+                className="card"
+                onClick={() => navigate(`/app/${inv.id}`)}
+                style={{
+                  padding: '16px 20px',
+                  cursor: 'pointer',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 180px 120px 100px',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    background: 'var(--color-surface-high)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-primary)',
+                    flexShrink: 0,
+                  }}>
+                    <Receipt size={16} />
+                  </div>
+                  <span style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 13,
+                    color: '#fff',
+                    letterSpacing: '-0.01em',
+                  }}>
+                    #{inv.invoice_number}
+                  </span>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)' }}>
+                  {inv.client_name || '—'}
+                </span>
+                <span style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: '#fff',
+                }}>
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: inv.currency || 'USD' }).format(inv.total_amount || 0)}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                    {inv.created_at ? new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                  </span>
+                  <ChevronRight size={14} style={{ color: 'var(--color-text-muted)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
+
+    {/* Mobile bottom nav */}
+    <nav className="ik-bottom-nav">
+      <button className="ik-bottom-nav-item active" onClick={() => navigate('/dashboard')}>
+        <LayoutDashboard size={20} /><span>Invoices</span>
+      </button>
+      <button className="ik-bottom-nav-item" onClick={() => navigate('/clients')}>
+        <Users size={20} /><span>Clients</span>
+      </button>
+      <button className="ik-bottom-nav-item" onClick={() => navigate('/app')}>
+        <Plus size={20} /><span>New</span>
+      </button>
+      <button className="ik-bottom-nav-item" onClick={() => navigate('/settings')}>
+        <Settings size={20} /><span>Settings</span>
+      </button>
+    </nav>
+  </div>
+  );
 }

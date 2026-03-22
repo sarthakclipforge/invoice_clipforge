@@ -5,6 +5,7 @@ import InvoiceApp from "./pages/InvoiceApp.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Settings from './pages/Settings.jsx';
+import Clients from './pages/Clients.jsx';
 import { getSession } from './lib/db';
 
 function ProtectedRoute({ children }) {
@@ -55,6 +56,7 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/app" element={<ProtectedRoute><InvoiceApp /></ProtectedRoute>} />
       <Route path="/app/:id" element={<ProtectedRoute><InvoiceApp /></ProtectedRoute>} />

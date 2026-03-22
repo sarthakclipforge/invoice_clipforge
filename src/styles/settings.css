@@ -2,7 +2,7 @@
 
 .settings-page {
   min-height: 100vh;
-  background: var(--color-background);
+  background: var(--color-bg);
   display: flex;
   flex-direction: column;
 }
@@ -133,7 +133,7 @@
   padding: 12px 14px;
   border-radius: 8px;
   border: 1.5px solid #E2E8F0;
-  background: var(--color-background);
+  background: var(--color-bg);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -237,14 +237,33 @@
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .settings-content {
-    padding: 0 var(--space-md, 16px);
     margin: var(--space-lg, 24px) auto;
+    padding: 0 var(--space-md, 16px);
   }
 
   .settings-card {
     padding: var(--space-lg, 24px) var(--space-md, 16px);
+  }
+
+  .settings-title {
+    font-size: 18px;
+  }
+
+  .settings-topbar {
+    padding: var(--space-md, 16px);
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-content {
+    padding: 0 var(--space-sm, 8px);
+    margin: var(--space-md, 16px) auto;
+  }
+
+  .settings-card {
+    padding: var(--space-md, 16px);
   }
 
   .settings-provider-grid {
@@ -252,6 +271,6 @@
   }
 
   .settings-topbar {
-    padding: var(--space-md, 16px);
+    padding: var(--space-sm, 8px) var(--space-md, 16px);
   }
 }

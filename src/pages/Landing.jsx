@@ -53,10 +53,10 @@ export default function Landing() {
                 </div>
             </nav>
 
-            {/* Hero Section - Redesigned 2-Column */}
+            {/* Hero Section - Centered Neumorphic */}
             <section className="hero-section">
-                <div className="hero-content">
-                    <div className="hero-badge">
+                <div className="hero-neumorphic-card">
+                    <div className="hero-badge neumorphic-inset">
                         <Sparkles size={16} />
                         Next-Gen AI Billing
                     </div>
@@ -67,23 +67,12 @@ export default function Landing() {
                         The world's most elegant billing tool for creators, agencies, and high-performance teams.
                     </p>
                     <div className="hero-cta-group">
-                        <button onClick={() => navigate('/login')} className="hero-cta">
+                        <button onClick={() => navigate('/login')} className="hero-cta neumorphic-outset">
                             Start Creating <ArrowRight size={22} />
                         </button>
                         <a onClick={() => { navigate('/login'); }} className="hero-cta-secondary" style={{ cursor: 'pointer' }}>
                             View Dashboard <ChevronRight size={20} />
                         </a>
-                    </div>
-                </div>
-                
-                <div className="hero-visual">
-                    <div className="hero-img-wrapper">
-                        <img 
-                            className="hero-img" 
-                            alt="InvoiceKit Premium Mockup" 
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdbN3BhXR5QgbcfYOBTMN-qqK8C3z93zgmRTXCpAgCvSmputxBs-mr2jEyCJldNWWcT-9v1UUtLZe_najy7Xc1EWvbK-u1-L95Sh5eEtZsmMFO98jJofx01Fg_T1IWIfCkJqaZAsku4TyCjZ5AuG3Ge3kmLEUFl1yVd3o0XREZCeT4_i02P96odgDX1dQqbi7U27rX8Gfoy3-wXVuKAzbqIx5bje8oqqBN-9QhSP2tSSr_3ho2ncEgvTt7JwVtKlsjyv4HdreeKsW1"
-                            /* Note: Using the previously provided image URL for consistency, but styling it with the new premium wrapper */
-                        />
                     </div>
                 </div>
             </section>

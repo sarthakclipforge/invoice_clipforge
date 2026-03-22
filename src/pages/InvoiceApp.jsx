@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save } from "lucide-react";
+import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save, ChevronLeft } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { saveInvoiceLocally, getInvoiceBySupabaseId, db } from "../lib/db";
 import { getActiveApiKey, getActiveProvider, getActiveModel, loadSettings } from '../lib/settings';
@@ -718,38 +718,87 @@ export default function InvoiceApp() {
     );
 
     return (
-        <div className="app-container">
-            <div className="app-topbar">
-                <Link to="/dashboard" className="topbar-brand">
-                    <div className="brand-icon"><Receipt size={18} /></div>
-                    InvoiceKit
-                </Link>
-
-                <div className="topbar-actions">
-                    <Link to="/dashboard" className="mode-btn" style={{ textDecoration: 'none' }}>Dashboard</Link>
-                    <div className="mode-toggle">
-                        {["edit", "preview"].map(m => (
-                            <button
-                                key={m}
-                                onClick={() => upd("mode")(m)}
-                                className={`mode-btn ${s.mode === m ? 'active' : ''}`}
-                            >
-                                {m}
-                            </button>
-                        ))}
-                    </div>
-                    <button className="export-btn" onClick={handleSave} disabled={isSaving} style={{ background: 'var(--accent-primary)' }}>
-                        <Save size={16} /> {isSaving ? "Saving..." : "Save Invoice"}
+        <div style={{ minHeight: '100dvh', background: 'var(--color-bg)' }}>
+            <header className="ik-topbar ik-editor-topbar">
+                <div className="ik-topbar-brand">
+                    <button 
+                        onClick={() => navigate('/dashboard')}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--color-text-muted)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: 8,
+                            padding: 4,
+                            borderRadius: 6,
+                        }}
+                    >
+                        <ChevronLeft size={18} />
                     </button>
-                    <button className="export-btn" onClick={handleDownload} disabled={downloading}>
-                        <Download size={16} /> {downloading ? 'Generating...' : 'Download PDF'}
-                    </button>
+                    <div className="ik-topbar-logo"><Receipt size={14} /></div>
+                    <span className="ik-topbar-name editor-brand-name">InvoiceKit</span>
+                    <span className="editor-mode-label">
+                        {s.mode === 'edit' ? 'Editor' : 'Preview'}
+                    </span>
                 </div>
-            </div>
+                
+                <div className="editor-topbar-controls">
+                    <div className="editor-topbar-toggle">
+                        <button
+                            onClick={() => upd("mode")("edit")}
+                            style={{
+                                background: s.mode === 'edit' ? 'var(--color-surface-high)' : 'transparent',
+                                color: s.mode === 'edit' ? '#fff' : 'var(--color-text-muted)',
+                                border: 'none',
+                                padding: '4px 12px',
+                                borderRadius: 7,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                fontFamily: 'var(--font-heading)',
+                                cursor: 'pointer',
+                                transition: 'all var(--transition-fast)',
+                            }}
+                        >
+                            EDIT
+                        </button>
+                        <button
+                            onClick={() => upd("mode")("preview")}
+                            style={{
+                                background: s.mode === 'preview' ? 'var(--color-surface-high)' : 'transparent',
+                                color: s.mode === 'preview' ? '#fff' : 'var(--color-text-muted)',
+                                border: 'none',
+                                padding: '4px 12px',
+                                borderRadius: 7,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                fontFamily: 'var(--font-heading)',
+                                cursor: 'pointer',
+                                transition: 'all var(--transition-fast)',
+                            }}
+                        >
+                            PREVIEW
+                        </button>
+                    </div>
 
-            <div className="app-main">
-                {s.mode === "edit" && Sidebar}
-                {InvoiceDoc}
+                    <div className="editor-topbar-actions">
+                        <button className="btn-secondary" onClick={handleSave} disabled={isSaving}>
+                            <Save size={14} /> {isSaving ? "Saving..." : "Save"}
+                        </button>
+                        <button className="btn-primary" onClick={handleDownload} disabled={downloading}>
+                            <Download size={14} /> PDF
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div className="app-main" style={{ paddingTop: 56 }}>
+                {s.mode === 'edit' && Sidebar}
+                <main className="app-document-container">
+                    {InvoiceDoc}
+                </main>
             </div>
         </div>
     );
