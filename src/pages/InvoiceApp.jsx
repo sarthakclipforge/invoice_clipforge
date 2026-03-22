@@ -729,98 +729,155 @@ export default function InvoiceApp() {
             overflow: 'hidden',
             paddingTop: 56,
         }}>
-            <header className="ik-topbar">
-                {/* Left — back button + brand */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <header style={{
+                position: 'fixed',
+                top: 0, left: 0, right: 0,
+                height: 56,
+                zIndex: 50,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 16px',
+                background: '#111319',
+                borderBottom: '1px solid rgba(255,255,255,0.07)',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+                gap: 8,
+            }}>
+
+                {/* LEFT */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     <button
-                        className="btn-secondary"
                         onClick={() => navigate('/dashboard')}
-                        style={{ padding: '0 10px', minWidth: 'unset' }}
+                        style={{
+                            width: 30, height: 30, flexShrink: 0,
+                            borderRadius: 7,
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            background: 'transparent',
+                            color: '#e2e2eb',
+                            cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
                     >
-                        <ChevronLeft size={16} />
+                        <ChevronLeft size={14} />
                     </button>
-                    <div className="ik-topbar-brand">
-                        <div className="ik-topbar-logo">
-                            <Receipt size={14} />
-                        </div>
-                        <span className="ik-topbar-name">InvoiceKit</span>
+                    <div style={{
+                        width: 24, height: 24, flexShrink: 0,
+                        borderRadius: 6,
+                        background: 'linear-gradient(145deg, #c0c1ff 0%, #8083ff 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <Receipt size={12} color="#0d0096" />
                     </div>
+                    <span style={{
+                        fontFamily: "'Manrope', sans-serif",
+                        fontSize: 15, fontWeight: 700,
+                        color: '#ffffff', letterSpacing: '-0.02em',
+                        whiteSpace: 'nowrap',
+                    }}>InvoiceKit</span>
                 </div>
 
-                {/* Centre — Edit / Preview pill toggle */}
+                {/* CENTRE — pill, hidden on small screens */}
                 <div style={{
                     display: 'flex',
-                    background: 'var(--color-surface-lowest)',
+                    alignItems: 'center',
+                    flexShrink: 0,
+                    background: '#0c0e14',
                     borderRadius: 999,
                     padding: 3,
                     border: '1px solid rgba(255,255,255,0.08)',
-                    gap: 2,
-                }}>
+                }}
+                    className="topbar-toggle"
+                >
                     <button
                         onClick={() => upd('mode')('edit')}
                         style={{
-                            padding: '5px 18px',
-                            borderRadius: 999,
-                            border: 'none',
-                            background: s.mode === 'edit' ? 'var(--color-indigo)' : 'transparent',
-                            color: s.mode === 'edit' ? '#fff' : 'var(--color-text-muted)',
-                            fontFamily: 'var(--font-heading)',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            letterSpacing: '0.06em',
-                            textTransform: 'uppercase',
+                            padding: '4px 14px',
+                            borderRadius: 999, border: 'none',
+                            background: s.mode === 'edit' ? '#6366F1' : 'transparent',
+                            color: s.mode === 'edit' ? '#fff' : '#6B7280',
+                            fontFamily: "'Manrope', sans-serif",
+                            fontSize: 11, fontWeight: 700,
+                            letterSpacing: '0.05em', textTransform: 'uppercase',
                             cursor: 'pointer',
-                            transition: 'all var(--transition-base)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 5,
+                            display: 'flex', alignItems: 'center', gap: 4,
+                            whiteSpace: 'nowrap',
+                            transition: 'all 200ms ease',
                         }}
                     >
-                        <Edit2 size={11} /> Edit
+                        <Edit2 size={10} /> Edit
                     </button>
                     <button
                         onClick={() => upd('mode')('preview')}
                         style={{
-                            padding: '5px 18px',
-                            borderRadius: 999,
-                            border: 'none',
-                            background: s.mode === 'preview' ? 'var(--color-indigo)' : 'transparent',
-                            color: s.mode === 'preview' ? '#fff' : 'var(--color-text-muted)',
-                            fontFamily: 'var(--font-heading)',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            letterSpacing: '0.06em',
-                            textTransform: 'uppercase',
+                            padding: '4px 14px',
+                            borderRadius: 999, border: 'none',
+                            background: s.mode === 'preview' ? '#6366F1' : 'transparent',
+                            color: s.mode === 'preview' ? '#fff' : '#6B7280',
+                            fontFamily: "'Manrope', sans-serif",
+                            fontSize: 11, fontWeight: 700,
+                            letterSpacing: '0.05em', textTransform: 'uppercase',
                             cursor: 'pointer',
-                            transition: 'all var(--transition-base)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 5,
+                            display: 'flex', alignItems: 'center', gap: 4,
+                            whiteSpace: 'nowrap',
+                            transition: 'all 200ms ease',
                         }}
                     >
-                        <Eye size={11} /> Preview
+                        <Eye size={10} /> Preview
                     </button>
                 </div>
 
-                {/* Right — Save + Download */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* RIGHT */}
+                <div style={{
+                    display: 'flex', alignItems: 'center',
+                    gap: 6, flexShrink: 0,
+                }}>
                     <button
-                        className={`btn-secondary ${savedFeedback ? 'btn-saved' : ''}`}
                         onClick={handleSave}
                         disabled={isSaving}
+                        style={{
+                            height: 32, padding: '0 12px',
+                            borderRadius: 8,
+                            border: savedFeedback
+                                ? '1px solid rgba(16,185,129,0.3)'
+                                : '1px solid rgba(255,255,255,0.12)',
+                            background: savedFeedback ? 'rgba(16,185,129,0.15)' : 'transparent',
+                            color: savedFeedback ? '#10B981' : '#e2e2eb',
+                            fontFamily: "'Manrope', sans-serif",
+                            fontSize: 11, fontWeight: 600,
+                            cursor: isSaving ? 'not-allowed' : 'pointer',
+                            opacity: isSaving ? 0.5 : 1,
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            whiteSpace: 'nowrap',
+                            transition: 'all 200ms ease',
+                        }}
                     >
-                        <Save size={13} />
-                        {isSaving ? 'Saving…' : savedFeedback ? 'Saved ✓' : 'Save'}
+                        <Save size={12} />
+                        <span className="btn-label">{isSaving ? 'Saving…' : savedFeedback ? 'Saved ✓' : 'Save'}</span>
                     </button>
                     <button
-                        className="btn-primary"
                         onClick={handleDownload}
                         disabled={downloading}
+                        style={{
+                            height: 32, padding: '0 12px',
+                            borderRadius: 8, border: 'none',
+                            background: 'linear-gradient(145deg, #c0c1ff 0%, #8083ff 100%)',
+                            color: '#0d0096',
+                            fontFamily: "'Manrope', sans-serif",
+                            fontSize: 11, fontWeight: 700,
+                            letterSpacing: '0.05em', textTransform: 'uppercase',
+                            cursor: downloading ? 'not-allowed' : 'pointer',
+                            opacity: downloading ? 0.5 : 1,
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            whiteSpace: 'nowrap',
+                            transition: 'opacity 150ms ease',
+                        }}
                     >
-                        <Download size={13} />
-                        {downloading ? 'Generating…' : 'Download PDF'}
+                        <Download size={12} />
+                        <span className="btn-label">{downloading ? '…' : 'PDF'}</span>
                     </button>
                 </div>
+
             </header>
 
             <div className="app-main" data-mode={s.mode}>

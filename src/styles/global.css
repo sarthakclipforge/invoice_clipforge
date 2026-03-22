@@ -716,3 +716,13 @@ main {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (min-width: 768px) { .mobile-only { display: none !important; } }
+
+/* Topbar responsive */
+@media (max-width: 600px) {
+  .topbar-toggle { display: none !important; }
+  .btn-label { display: none; }
+}
+@media (min-width: 601px) and (max-width: 860px) {
+  .topbar-toggle { display: flex; }
+  .btn-label { display: inline; }
+}
