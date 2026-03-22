@@ -10,15 +10,23 @@ export default function Dashboard() {
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [invoiceToDelete, setInvoiceToDelete] = useState(null);
 
     async function handleDeleteInvoice(e, id) {
-      e.stopPropagation() // prevent navigating to the invoice
-      if (!window.confirm('Delete this invoice? This cannot be undone.')) return
+      e.stopPropagation()
+      e.preventDefault()
+      setInvoiceToDelete(id)
+    }
+
+    async function confirmDelete() {
+      if (!invoiceToDelete) return
       try {
-        await supabase.from('invoices').delete().eq('id', id)
-        setInvoices(prev => prev.filter(inv => inv.id !== id))
+        await supabase.from('invoices').delete().eq('id', invoiceToDelete)
+        setInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete))
       } catch (err) {
         console.error('Delete failed:', err)
+      } finally {
+        setInvoiceToDelete(null)
       }
     }
 
@@ -362,6 +370,77 @@ export default function Dashboard() {
         </button>
       ))}
     </nav>
+
+    {/* ── Delete confirmation modal ── */}
+    {invoiceToDelete && (
+      <div
+        onClick={() => setInvoiceToDelete(null)}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24,
+        }}
+      >
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            background: '#191b22',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 16,
+            padding: 28,
+            width: '100%', maxWidth: 380,
+            display: 'flex', flexDirection: 'column', gap: 16,
+          }}
+        >
+          <div>
+            <h2 style={{
+              fontFamily: "'Manrope', sans-serif",
+              fontSize: 17, fontWeight: 700,
+              color: '#ffffff', margin: 0, marginBottom: 6,
+            }}>Delete invoice?</h2>
+            <p style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 13, color: '#6B7280', margin: 0,
+            }}>
+              This cannot be undone. The invoice will be permanently removed.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setInvoiceToDelete(null)}
+              style={{
+                height: 34, padding: '0 16px',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'transparent', color: '#e2e2eb',
+                fontFamily: "'Manrope', sans-serif",
+                fontSize: 12, fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              style={{
+                height: 34, padding: '0 16px',
+                borderRadius: 8, border: 'none',
+                background: '#93000a',
+                color: '#ffdad6',
+                fontFamily: "'Manrope', sans-serif",
+                fontSize: 12, fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <Trash2 size={13} /> Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
   </div>
 )
