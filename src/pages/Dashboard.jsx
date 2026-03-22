@@ -19,10 +19,16 @@ export default function Dashboard() {
     }
 
     async function confirmDelete() {
-      if (!invoiceToDelete) return
+      if (invoiceToDelete === null || invoiceToDelete === undefined) return
+      const inv = invoices.find((v, i) => (v.id || `local-${i}`) === invoiceToDelete)
       try {
-        await supabase.from('invoices').delete().eq('id', invoiceToDelete)
-        setInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete))
+        // Only call Supabase delete if the invoice has a real ID
+        if (inv?.id) {
+          const { error } = await supabase.from('invoices').delete().eq('id', inv.id)
+          if (error) console.error('Supabase delete error:', error)
+        }
+        // Always remove from local state
+        setInvoices(prev => prev.filter((v, i) => (v.id || `local-${i}`) !== invoiceToDelete))
       } catch (err) {
         console.error('Delete failed:', err)
       } finally {
@@ -249,7 +255,10 @@ export default function Dashboard() {
             {invoices.map((inv, idx) => (
               <div
                 key={inv.id || inv.invoice_number || idx}
-                onClick={() => navigate(`/app/${inv.id}`)}
+                onClick={() => {
+                  if (inv.id) navigate(`/app/${inv.id}`)
+                  else alert('This invoice has not been synced yet. Open the editor and save it first.')
+                }}
                 style={{
                   background: '#1A1D27',
                   border: '1px solid rgba(255,255,255,0.05)',
@@ -312,8 +321,9 @@ export default function Dashboard() {
                   onClick={e => {
                     e.stopPropagation()
                     e.preventDefault()
-                    console.log('DELETE CLICKED', inv.id)
-                    setInvoiceToDelete(inv.id)
+                    const identifier = inv.id || `local-${idx}`
+                    console.log('DELETE CLICKED', identifier)
+                    setInvoiceToDelete(identifier)
                   }}
                   style={{
                     background: 'none', border: 'none',

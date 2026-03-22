@@ -312,6 +312,7 @@ export default function InvoiceApp() {
         try {
             // Always save locally first
             const localId = await saveInvoiceLocally(localPayload);
+            console.log('Saved locally, localId:', localId)
 
             // Push to Supabase if online
             if (navigator.onLine) {
@@ -325,32 +326,48 @@ export default function InvoiceApp() {
                 };
 
                 if (id) {
+                    // UPDATE existing invoice
+                    console.log('Updating invoice:', id)
                     const { error } = await supabase
                         .from('invoices')
                         .update(supabasePayload)
                         .eq('id', id);
 
-                    if (!error) {
+                    if (error) {
+                        console.error('Supabase update error:', error)
+                        alert('Invoice saved locally but failed to sync: ' + error.message);
+                    } else {
                         await db.invoices.update(localId, { synced: 1 });
+                        alert('Invoice updated successfully!');
                     }
-                    alert('Invoice updated successfully!');
                 } else {
+                    // INSERT new invoice
+                    console.log('Inserting new invoice')
                     const { data, error } = await supabase
                         .from('invoices')
                         .insert(supabasePayload)
                         .select('id')
                         .single();
 
-                    if (!error && data?.id) {
+                    console.log('Supabase insert result:', { data, error })
+
+                    if (error) {
+                        console.error('Supabase insert error:', error)
+                        alert('Invoice saved locally but failed to sync: ' + error.message);
+                    } else if (data?.id) {
                         await db.invoices.update(localId, { synced: 1, supabaseId: data.id });
                         navigate(`/app/${data.id}`, { replace: true });
+                        alert('Invoice saved to Dashboard!');
+                    } else {
+                        console.error('Supabase returned no data:', data)
+                        alert('Invoice saved locally. Sync may have failed.');
                     }
-                    alert('Invoice saved to Dashboard!');
                 }
             } else {
                 alert('Saved offline. Will sync when back online.');
             }
         } catch (err) {
+            console.error('Save exception:', err)
             alert('Error saving invoice: ' + err.message);
         } finally {
             setIsSaving(false);
