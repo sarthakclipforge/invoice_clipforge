@@ -726,3 +726,10 @@ main {
   .topbar-toggle { display: flex; }
   .btn-label { display: inline; }
 }
+
+/* ── Dashboard mobile fixes ─────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .dash-sidebar { display: none !important; }
+  .dash-main { margin-left: 0 !important; }
+  .dash-new-label { display: none; }
+}

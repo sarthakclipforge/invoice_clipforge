@@ -128,12 +128,13 @@ export default function Dashboard() {
           display: 'flex', alignItems: 'center', gap: 6,
         }}
       >
-        <Plus size={13} /> New Invoice
+        <Plus size={14} />
+        <span className="dash-new-label">New Invoice</span>
       </button>
     </header>
 
     {/* ── Sidebar ── */}
-    <aside style={{
+    <aside className="dash-sidebar" style={{
       position: 'fixed',
       left: 0, top: 56,
       width: 200,
@@ -203,7 +204,7 @@ export default function Dashboard() {
     )}
 
     {/* ── Main content ── */}
-    <main style={{
+    <main className="dash-main" style={{
       marginLeft: 200,
       paddingTop: 56,
       minHeight: '100dvh',
@@ -245,7 +246,8 @@ export default function Dashboard() {
               display: 'flex', alignItems: 'center', gap: 6,
             }}
           >
-            <Plus size={13} /> New Invoice
+            <Plus size={14} />
+            <span className="dash-new-label">New Invoice</span>
           </button>
         </div>
 
