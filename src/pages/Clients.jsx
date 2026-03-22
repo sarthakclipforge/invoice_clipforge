@@ -124,60 +124,14 @@ export default function Clients() {
   return (
   <div style={{ minHeight: '100dvh', background: '#0F1117' }}>
 
-    {/* ── Topbar ── */}
-    <header style={{
-      position: 'fixed',
-      top: 0, left: 0, right: 0,
-      height: 56,
-      zIndex: 50,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 20px',
-      background: '#111319',
-      borderBottom: '1px solid rgba(255,255,255,0.07)',
-      boxSizing: 'border-box',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{
-          width: 26, height: 26,
-          borderRadius: 6,
-          background: 'linear-gradient(145deg, #c0c1ff 0%, #8083ff 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <Receipt size={13} color="#0d0096" />
-        </div>
-        <span style={{
-          fontFamily: "'Manrope', sans-serif",
-          fontSize: 16, fontWeight: 700,
-          color: '#ffffff', letterSpacing: '-0.02em',
-        }}>InvoiceKit</span>
-      </div>
-      <button
-        onClick={() => setIsModalOpen(true)}
-        style={{
-          height: 34, padding: '0 14px',
-          borderRadius: 10, border: 'none',
-          background: 'linear-gradient(145deg, #c0c1ff 0%, #8083ff 100%)',
-          color: '#0d0096',
-          fontFamily: "'Manrope', sans-serif",
-          fontSize: 12, fontWeight: 700,
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-          cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 6,
-        }}
-      >
-        <Plus size={13} /> New Client
-      </button>
-    </header>
+
 
     {/* ── Sidebar ── */}
     <aside className="dash-sidebar" style={{
       position: 'fixed',
-      left: 0, top: 56,
+      left: 0, top: 0,
       width: 200,
-      height: 'calc(100vh - 56px)',
+      height: '100vh',
       background: '#191b22',
       borderRight: '1px solid rgba(255,255,255,0.05)',
       display: 'flex',
@@ -230,7 +184,7 @@ export default function Clients() {
     {/* ── Main content ── */}
     <main className="dash-main" style={{
       marginLeft: 200,
-      paddingTop: 56,
+      paddingTop: 0,
       minHeight: '100dvh',
       paddingBottom: 40,
     }}>
