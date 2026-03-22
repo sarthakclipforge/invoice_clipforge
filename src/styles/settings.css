@@ -13,7 +13,7 @@
   gap: var(--space-md, 16px);
   padding: var(--space-md, 16px) var(--space-xl, 32px);
   background: var(--color-surface);
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -92,7 +92,7 @@
 .settings-provider-btn {
   padding: 10px 16px;
   border-radius: 8px;
-  border: 1.5px solid #E2E8F0;
+  border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text);
   font-family: 'Open Sans', sans-serif;
@@ -104,14 +104,15 @@
 }
 
 .settings-provider-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--color-border-hover);
+  background: var(--color-surface-mid);
 }
 
 .settings-provider-btn.active {
   border-color: var(--color-primary);
-  background: #EFF6FF;
-  color: var(--color-primary);
+  background: var(--color-surface-high);
+  color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 /* ── API key rows ───────────────────────────────────────────────────────────── */
@@ -132,8 +133,8 @@
 .settings-key-row {
   padding: 12px 14px;
   border-radius: 8px;
-  border: 1.5px solid #E2E8F0;
-  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -142,7 +143,8 @@
 
 .settings-key-row.active-provider {
   border-color: var(--color-primary);
-  background: #F8FAFF;
+  background: var(--color-surface-mid);
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
 .settings-key-label-row {
@@ -164,11 +166,12 @@
   font-weight: 700;
   font-family: 'Poppins', sans-serif;
   color: var(--color-primary);
-  background: #DBEAFE;
+  background: rgba(99, 102, 241, 0.15); /* Tint of primary color for dark theme */
   padding: 2px 7px;
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 .settings-key-link {
@@ -204,18 +207,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid #E2E8F0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: var(--color-surface);
+  background: var(--color-surface-mid);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
   flex-shrink: 0;
 }
 
 .settings-key-toggle:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--color-border-hover);
+  color: var(--color-text);
+  background: var(--color-surface-high);
 }
 
 /* ── Save row ───────────────────────────────────────────────────────────────── */
@@ -224,7 +228,7 @@
   display: flex;
   justify-content: flex-end;
   padding-top: var(--space-sm, 8px);
-  border-top: 1px solid #E2E8F0;
+  border-top: 1px solid var(--color-border);
 }
 
 .settings-save-btn {
