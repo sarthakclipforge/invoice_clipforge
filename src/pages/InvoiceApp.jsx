@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save, ChevronLeft } from "lucide-react";
+import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save, ChevronLeft, Eye, Edit3 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { saveInvoiceLocally, getInvoiceBySupabaseId, db } from "../lib/db";
 import { getActiveApiKey, getActiveProvider, getActiveModel, loadSettings } from '../lib/settings';
@@ -750,6 +750,7 @@ export default function InvoiceApp() {
                         <button
                             onClick={() => upd("mode")("edit")}
                             style={{
+                                display: 'flex', alignItems: 'center', gap: 6,
                                 background: s.mode === 'edit' ? 'var(--color-surface-high)' : 'transparent',
                                 color: s.mode === 'edit' ? '#fff' : 'var(--color-text-muted)',
                                 border: 'none',
@@ -759,14 +760,16 @@ export default function InvoiceApp() {
                                 fontWeight: 700,
                                 fontFamily: 'var(--font-heading)',
                                 cursor: 'pointer',
+                                flexShrink: 0,
                                 transition: 'all var(--transition-fast)',
                             }}
                         >
-                            EDIT
+                            <Edit3 size={14} /> <span className="editor-hide-mobile">EDIT</span>
                         </button>
                         <button
                             onClick={() => upd("mode")("preview")}
                             style={{
+                                display: 'flex', alignItems: 'center', gap: 6,
                                 background: s.mode === 'preview' ? 'var(--color-surface-high)' : 'transparent',
                                 color: s.mode === 'preview' ? '#fff' : 'var(--color-text-muted)',
                                 border: 'none',
@@ -776,10 +779,11 @@ export default function InvoiceApp() {
                                 fontWeight: 700,
                                 fontFamily: 'var(--font-heading)',
                                 cursor: 'pointer',
+                                flexShrink: 0,
                                 transition: 'all var(--transition-fast)',
                             }}
                         >
-                            PREVIEW
+                            <Eye size={14} /> <span className="editor-hide-mobile">PREVIEW</span>
                         </button>
                     </div>
 
