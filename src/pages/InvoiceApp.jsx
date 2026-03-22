@@ -292,6 +292,7 @@ export default function InvoiceApp() {
     }
 
     const handleSave = async () => {
+        console.log('SAVE TRIGGERED', s)
         setIsSaving(true);
 
         const totalAmount = subtotal + taxAmt;
@@ -340,7 +341,7 @@ export default function InvoiceApp() {
                         .select('id')
                         .single();
 
-                    if (!error && data) {
+                    if (!error && data?.id) {
                         await db.invoices.update(localId, { synced: 1, supabaseId: data.id });
                         navigate(`/app/${data.id}`, { replace: true });
                     }

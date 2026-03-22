@@ -246,9 +246,9 @@ export default function Dashboard() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {invoices.map(inv => (
+            {invoices.map((inv, idx) => (
               <div
-                key={inv.id}
+                key={inv.id || inv.invoice_number || idx}
                 onClick={() => navigate(`/app/${inv.id}`)}
                 style={{
                   background: '#1A1D27',
@@ -309,7 +309,12 @@ export default function Dashboard() {
                 
                 {/* Delete button */}
                 <button
-                  onClick={e => handleDeleteInvoice(e, inv.id)}
+                  onClick={e => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    console.log('DELETE CLICKED', inv.id)
+                    setInvoiceToDelete(inv.id)
+                  }}
                   style={{
                     background: 'none', border: 'none',
                     cursor: 'pointer', color: '#6B7280',
