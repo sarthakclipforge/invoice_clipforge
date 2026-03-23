@@ -8,7 +8,9 @@ import { getActiveApiKey, getActiveProvider, getActiveModel, loadSettings } from
 import { CURRENCIES, formatMoney } from '../lib/currency';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import InvoiceCorporate from '../components/InvoiceCorporate';
 import "../styles/invoice.css";
+import "../styles/invoice-corporate.css";
 
 const INITIAL_ITEMS = [
     { id: 1, name: "Brand Identity Design", description: "Logo, color palette, and typography system", qty: 1, rate: 4500 },
@@ -36,6 +38,7 @@ const INIT = {
     aiPrompt: '',
     aiLoading: false,
     aiError: '',
+    template: 'classic',
 };
 
 function Field({ label, value, onChange, placeholder, rows, type = "text" }) {
@@ -748,6 +751,24 @@ export default function InvoiceApp() {
                 </div>
             </div>
 
+            <SectionHead title="Template" />
+            <div className="template-selector">
+                <div
+                    className={`template-thumb ${s.template === 'classic' ? 'active' : ''}`}
+                    onClick={() => upd('template')('classic')}
+                >
+                    <div className="template-thumb-icon" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)', color: '#fff' }}>Aa</div>
+                    <div className="template-thumb-label">Classic</div>
+                </div>
+                <div
+                    className={`template-thumb ${s.template === 'corporate' ? 'active' : ''}`}
+                    onClick={() => upd('template')('corporate')}
+                >
+                    <div className="template-thumb-icon" style={{ background: 'linear-gradient(135deg, #2EB67D 0%, #36D399 100%)', color: '#fff' }}>Aa</div>
+                    <div className="template-thumb-label">Corporate</div>
+                </div>
+            </div>
+
             <SectionHead title="Line Items" />
             <div>
                 {s.lineItems.map((item, idx) => (
@@ -846,6 +867,20 @@ export default function InvoiceApp() {
                 ref={invoiceWrapperRef}
                 style={getWrapperStyle()}
             >
+                {s.template === 'corporate' ? (
+                    <InvoiceCorporate
+                        ref={(node) => {
+                            invoicePaperRef.current = node;
+                            invoiceRef.current = node;
+                        }}
+                        s={s}
+                        subtotal={subtotal}
+                        taxAmt={taxAmt}
+                        total={total}
+                        formatMoney={formatMoney}
+                        initials={initials}
+                    />
+                ) : (
                 <div 
                     className="invoice-paper" 
                     id="invoice" 
@@ -953,6 +988,7 @@ export default function InvoiceApp() {
                     </div>
                 )}
             </div>
+                )}
             </div>
         </div>
     );
