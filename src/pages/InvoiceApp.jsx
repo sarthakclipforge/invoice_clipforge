@@ -4,25 +4,10 @@ import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Sav
 import { supabase } from "../lib/supabaseClient";
 import { saveInvoiceLocally, getInvoiceBySupabaseId, getLocalIdForSupabaseId, db } from "../lib/db";
 import { getActiveApiKey, getActiveProvider, getActiveModel, loadSettings } from '../lib/settings';
+import { CURRENCIES, formatMoney } from '../lib/currency';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import "../styles/invoice.css";
-
-const CURRENCIES = [
-    { code: "USD", symbol: "$", locale: "en-US" },
-    { code: "EUR", symbol: "€", locale: "de-DE" },
-    { code: "GBP", symbol: "£", locale: "en-GB" },
-    { code: "INR", symbol: "₹", locale: "en-IN" },
-    { code: "JPY", symbol: "¥", locale: "ja-JP" },
-    { code: "AED", symbol: "د.إ", locale: "ar-AE" },
-    { code: "SGD", symbol: "S$", locale: "en-SG" },
-    { code: "AUD", symbol: "A$", locale: "en-AU" },
-];
-
-function formatMoney(amount, code) {
-    const c = CURRENCIES.find((x) => x.code === code) || CURRENCIES[0];
-    return new Intl.NumberFormat(c.locale, { style: "currency", currency: c.code, minimumFractionDigits: 2 }).format(amount || 0);
-}
 
 const INITIAL_ITEMS = [
     { id: 1, name: "Brand Identity Design", description: "Logo, color palette, and typography system", qty: 1, rate: 4500 },
@@ -370,7 +355,11 @@ export default function InvoiceApp() {
                             .eq('id', activeSupabaseId);
 
                         if (error) {
-                            showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                            if (error.message && error.message.includes('Failed to fetch')) {
+                                showToast('Saved locally. Will sync when connection restores.', 'warning');
+                            } else {
+                                showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                            }
                         } else {
                             await db.invoices.update(localId, { synced: 1 });
                             showToast('Invoice updated!', 'success');
@@ -388,7 +377,11 @@ export default function InvoiceApp() {
                             .single();
 
                         if (error) {
-                            showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                            if (error.message && error.message.includes('Failed to fetch')) {
+                                showToast('Saved locally. Will sync when connection restores.', 'warning');
+                            } else {
+                                showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                            }
                         } else if (data?.id) {
                             await db.invoices.update(localId, { synced: 1, supabaseId: data.id });
                             navigate(`/app/${data.id}`, { replace: true });

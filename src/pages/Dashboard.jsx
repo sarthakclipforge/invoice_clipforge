@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, ChevronRight, Trash2, Search, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
-import { getAllInvoicesLocal, clearSession, deleteInvoiceBySupabaseId, db } from '../lib/db'
+import { getAllInvoicesLocal, clearSession, deleteInvoiceBySupabaseId, deleteInvoiceByLocalId, db } from '../lib/db'
+import { formatMoney } from '../lib/currency'
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function Dashboard() {
 
     async function confirmDelete() {
       if (invoiceToDelete === null || invoiceToDelete === undefined) return
-      const inv = invoices.find((v, i) => (v.id || `local-${i}`) === invoiceToDelete)
+      const inv = invoices.find(v => (v.id || `local-${v.localId}`) === invoiceToDelete)
       try {
         // Delete from Supabase if it has a real ID
         if (inv?.id) {
@@ -33,9 +34,11 @@ export default function Dashboard() {
         // Delete from IndexedDB
         if (inv?.id) {
           await deleteInvoiceBySupabaseId(inv.id)
+        } else if (inv?.localId) {
+          await deleteInvoiceByLocalId(inv.localId)
         }
         // Remove from React state
-        setInvoices(prev => prev.filter((v, i) => (v.id || `local-${i}`) !== invoiceToDelete))
+        setInvoices(prev => prev.filter(v => (v.id || `local-${v.localId}`) !== invoiceToDelete))
       } catch (err) {
         console.error('Delete failed:', err)
       } finally {
@@ -483,10 +486,7 @@ export default function Dashboard() {
                   fontSize: 15, fontWeight: 700, color: '#ffffff',
                   flexShrink: 0,
                 }}>
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: inv.currency || 'USD',
-                  }).format(inv.total_amount || 0)}
+                  {formatMoney(inv.total_amount, inv.currency)}
                 </div>
                 <div style={{
                   fontSize: 11, color: '#6B7280', flexShrink: 0,
@@ -502,7 +502,7 @@ export default function Dashboard() {
                   onClick={e => {
                     e.stopPropagation()
                     e.preventDefault()
-                    const identifier = inv.id || `local-${idx}`
+                    const identifier = inv.id || `local-${inv.localId}`
                     setInvoiceToDelete(identifier)
                   }}
                   style={{
