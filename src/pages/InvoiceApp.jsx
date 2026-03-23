@@ -82,13 +82,13 @@ export default function InvoiceApp() {
     const [showSuggestions, setShowSuggestions] = useState(false)
 
     async function searchClients(query) {
-      if (!query.trim()) {
-        setClientSuggestions([])
-        setShowSuggestions(false)
-        return
-      }
       try {
         const local = await getAllClientsLocal()
+        if (!query || !query.trim()) {
+          setClientSuggestions(local)
+          setShowSuggestions(local.length > 0)
+          return
+        }
         const matches = local.filter(c =>
           c.name?.toLowerCase().includes(query.toLowerCase()) ||
           c.email?.toLowerCase().includes(query.toLowerCase())
@@ -614,7 +614,7 @@ export default function InvoiceApp() {
                       }, 150)
                     }}
                     onFocus={() => {
-                      if (s.clientName) searchClients(s.clientName)
+                      searchClients(s.clientName)
                     }}
                     style={{
                       width: '100%',
