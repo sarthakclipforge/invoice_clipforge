@@ -170,6 +170,23 @@ export default function InvoiceApp() {
         return () => observer.disconnect();
     }, []);
 
+    // Auto-load brand from Settings for new invoices
+    useEffect(() => {
+        if (routeId) return; // only for new invoices
+        const saved = loadSettings();
+        const brand = saved.brand || {};
+        if (brand.businessName || brand.businessAddress || brand.businessEmail || brand.businessPhone || brand.logo) {
+            setS(prev => ({
+                ...prev,
+                businessName: brand.businessName || prev.businessName,
+                businessAddress: brand.businessAddress || prev.businessAddress,
+                businessEmail: brand.businessEmail || prev.businessEmail,
+                businessPhone: brand.businessPhone || prev.businessPhone,
+                logo: brand.logo || prev.logo,
+            }));
+        }
+    }, []);
+
     useEffect(() => {
         if (!routeId) return; // new invoice — no loading needed
 
