@@ -20,7 +20,7 @@ export default function Dashboard() {
 
     async function confirmDelete() {
       if (invoiceToDelete === null || invoiceToDelete === undefined) return
-      const inv = invoices.find((v, i) => (v.id || `local-${i}`) === invoiceToDelete)
+      const inv = invoices.find(v => (v.id || `local-${v.localId}`) === invoiceToDelete)
       try {
         // Delete from Supabase if it has a real ID
         if (inv?.id) {
@@ -34,9 +34,11 @@ export default function Dashboard() {
         // Delete from IndexedDB
         if (inv?.id) {
           await deleteInvoiceBySupabaseId(inv.id)
+        } else if (inv?.localId) {
+          await deleteInvoiceByLocalId(inv.localId)
         }
         // Remove from React state
-        setInvoices(prev => prev.filter((v, i) => (v.id || `local-${i}`) !== invoiceToDelete))
+        setInvoices(prev => prev.filter(v => (v.id || `local-${v.localId}`) !== invoiceToDelete))
       } catch (err) {
         console.error('Delete failed:', err)
       } finally {
@@ -500,7 +502,7 @@ export default function Dashboard() {
                   onClick={e => {
                     e.stopPropagation()
                     e.preventDefault()
-                    const identifier = inv.id || `local-${idx}`
+                    const identifier = inv.id || `local-${inv.localId}`
                     setInvoiceToDelete(identifier)
                   }}
                   style={{

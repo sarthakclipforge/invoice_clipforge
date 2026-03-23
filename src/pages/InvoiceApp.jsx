@@ -355,7 +355,7 @@ export default function InvoiceApp() {
                             .eq('id', activeSupabaseId);
 
                         if (error) {
-                            if (error.message === 'Failed to fetch') {
+                            if (error.message && error.message.includes('Failed to fetch')) {
                                 showToast('Saved locally. Will sync when connection restores.', 'warning');
                             } else {
                                 showToast('Saved locally. Sync failed: ' + error.message, 'warning');
@@ -377,7 +377,7 @@ export default function InvoiceApp() {
                             .single();
 
                         if (error) {
-                            if (error.message === 'Failed to fetch') {
+                            if (error.message && error.message.includes('Failed to fetch')) {
                                 showToast('Saved locally. Will sync when connection restores.', 'warning');
                             } else {
                                 showToast('Saved locally. Sync failed: ' + error.message, 'warning');
