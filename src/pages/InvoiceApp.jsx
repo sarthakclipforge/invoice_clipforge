@@ -893,10 +893,6 @@ export default function InvoiceApp() {
                         <span>Invoice Date</span>
                         <span>{s.invoiceDate}</span>
                     </div>
-                    <div className="inv-date-item">
-                        <span>Terms</span>
-                        <span>{s.terms}</span>
-                    </div>
                 </div>
 
                 <table className="inv-table">
