@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save, ChevronLeft, Eye, Edit2 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { saveInvoiceLocally, getInvoiceBySupabaseId, getLocalIdForSupabaseId, db } from "../lib/db";
+import { getAllClientsLocal, getClientByName, saveClientLocally, upsertClientToSupabase } from '../lib/clients'
 import { getActiveApiKey, getActiveProvider, getActiveModel, loadSettings } from '../lib/settings';
 import { CURRENCIES, formatMoney } from '../lib/currency';
 import html2canvas from 'html2canvas';
@@ -76,6 +77,40 @@ export default function InvoiceApp() {
     const invoiceWrapperRef = useRef();
     const invoicePaperRef = useRef();
     const [scale, setScale] = useState(1);
+
+    const [clientSuggestions, setClientSuggestions] = useState([])
+    const [showSuggestions, setShowSuggestions] = useState(false)
+
+    async function searchClients(query) {
+      if (!query.trim()) {
+        setClientSuggestions([])
+        setShowSuggestions(false)
+        return
+      }
+      try {
+        const local = await getAllClientsLocal()
+        const matches = local.filter(c =>
+          c.name?.toLowerCase().includes(query.toLowerCase()) ||
+          c.email?.toLowerCase().includes(query.toLowerCase())
+        )
+        setClientSuggestions(matches)
+        setShowSuggestions(matches.length > 0)
+      } catch {
+        setClientSuggestions([])
+        setShowSuggestions(false)
+      }
+    }
+
+    function selectClient(client) {
+      setS(p => ({
+        ...p,
+        clientName:    client.name    || p.clientName,
+        clientAddress: client.address || p.clientAddress,
+        shipAddress:   client.shipAddress || client.address || p.shipAddress,
+      }))
+      setShowSuggestions(false)
+      setClientSuggestions([])
+    }
 
     function showToast(msg, type = 'success') {
         setToastMsg(msg);
@@ -533,7 +568,108 @@ export default function InvoiceApp() {
 
             <SectionHead title="ClientDetails" />
             <div>
-                <Field label="Client Name" value={s.clientName} onChange={upd("clientName")} />
+                {/* Client Name with autocomplete */}
+                <div style={{ marginBottom: 8, position: 'relative' }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700,
+                    fontFamily: "'Manrope', sans-serif",
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: '#6B7280', marginBottom: 4,
+                  }}>Client Name</div>
+
+                  <input
+                    placeholder="Search or type client name"
+                    value={s.clientName}
+                    onChange={e => {
+                      setS(p => ({ ...p, clientName: e.target.value }))
+                      searchClients(e.target.value)
+                    }}
+                    onBlur={() => {
+                      // delay so click on suggestion registers first
+                      setTimeout(() => {
+                        setShowSuggestions(false)
+                        // Note: handleClientBlur is undefined in this snippet, but left in as per user request
+                        // handleClientBlur && handleClientBlur(s.clientName)
+                      }, 150)
+                    }}
+                    onFocus={() => {
+                      if (s.clientName) searchClients(s.clientName)
+                    }}
+                    style={{
+                      width: '100%',
+                      background: '#1E2130',
+                      border: `1px solid ${showSuggestions ? '#6366F1' : '#2A2D3A'}`,
+                      borderRadius: showSuggestions ? '7px 7px 0 0' : 7,
+                      padding: '7px 10px',
+                      color: '#e2e2eb', fontSize: 12,
+                      fontFamily: "'Inter', sans-serif",
+                      outline: 'none', boxSizing: 'border-box',
+                      transition: 'border-color 150ms ease',
+                    }}
+                  />
+
+                  {/* Suggestions dropdown */}
+                  {showSuggestions && clientSuggestions.length > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0, right: 0,
+                      background: '#1A1D27',
+                      border: '1px solid #6366F1',
+                      borderTop: 'none',
+                      borderRadius: '0 0 7px 7px',
+                      zIndex: 100,
+                      maxHeight: 180,
+                      overflowY: 'auto',
+                      scrollbarWidth: 'none',
+                    }}>
+                      {clientSuggestions.map((client, idx) => (
+                        <div
+                          key={client.localId || idx}
+                          onMouseDown={() => selectClient(client)}
+                          style={{
+                            padding: '9px 12px',
+                            cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            borderBottom: idx < clientSuggestions.length - 1
+                              ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                            transition: 'background 100ms ease',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.12)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          {/* Initials avatar */}
+                          <div style={{
+                            width: 28, height: 28, flexShrink: 0,
+                            borderRadius: 6,
+                            background: 'rgba(99,102,241,0.15)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontFamily: "'Manrope', sans-serif",
+                            fontSize: 11, fontWeight: 700,
+                            color: '#c0c1ff',
+                          }}>
+                            {client.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{
+                              fontFamily: "'Manrope', sans-serif",
+                              fontSize: 12, fontWeight: 600,
+                              color: '#ffffff',
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}>{client.name}</div>
+                            {client.email && (
+                              <div style={{
+                                fontFamily: "'Inter', sans-serif",
+                                fontSize: 10, color: '#6B7280',
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              }}>{client.email}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Field label="Bill To" value={s.clientAddress} onChange={upd("clientAddress")} rows={3} />
                 <Field label="Ship To" value={s.shipAddress} onChange={upd("shipAddress")} rows={3} />
             </div>
