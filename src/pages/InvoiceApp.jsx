@@ -929,23 +929,29 @@ export default function InvoiceApp() {
                 </div>
 
                 <div className="inv-meta-grid">
+                    {(s.clientName || s.clientAddress) && (
                     <div className="inv-meta-col">
                         <div className="inv-meta-label">Bill To</div>
-                        <div className="inv-client-name">{s.clientName}</div>
-                        <div className="inv-client-address">{s.clientAddress}</div>
+                        {s.clientName && <div className="inv-client-name">{s.clientName}</div>}
+                        {s.clientAddress && <div className="inv-client-address">{s.clientAddress}</div>}
                     </div>
+                    )}
+                    {s.shipAddress && (
                     <div className="inv-meta-col">
                         <div className="inv-meta-label">Ship To</div>
                         <div className="inv-client-address" style={{ marginTop: '1.5rem' }}>{s.shipAddress}</div>
                     </div>
+                    )}
                 </div>
 
+                {s.invoiceDate && (
                 <div className="inv-dates">
                     <div className="inv-date-item">
                         <span>Invoice Date</span>
                         <span>{s.invoiceDate}</span>
                     </div>
                 </div>
+                )}
 
                 <table className="inv-table">
                     <thead>
@@ -974,10 +980,12 @@ export default function InvoiceApp() {
                 </table>
 
                 <div className="inv-footer">
+                    {s.notes && (
                     <div className="inv-notes">
                         <div className="inv-meta-label">Notes</div>
                         <div className="inv-client-address">{s.notes}</div>
                     </div>
+                    )}
                     <div className="inv-summary">
                         <div className="summary-row">
                             <span>Sub Total</span>

@@ -30,15 +30,19 @@ const InvoiceCorporate = forwardRef(function InvoiceCorporate(
 
             {/* ── Bill To + Invoice # ── */}
             <div className="corp-info-grid">
+                {(s.clientName || s.clientAddress) && (
                 <div className="corp-info-left">
                     <div className="corp-info-label">Bill To</div>
-                    <div className="corp-client-name">{s.clientName}</div>
-                    <div className="corp-client-address">{s.clientAddress}</div>
+                    {s.clientName && <div className="corp-client-name">{s.clientName}</div>}
+                    {s.clientAddress && <div className="corp-client-address">{s.clientAddress}</div>}
                 </div>
+                )}
+                {s.invoiceNumber && (
                 <div className="corp-info-right">
                     <div className="corp-info-label">Invoice#</div>
                     <div className="corp-invoice-number">{s.invoiceNumber}</div>
                 </div>
+                )}
             </div>
 
             {/* ── Ship To ── */}
@@ -50,16 +54,18 @@ const InvoiceCorporate = forwardRef(function InvoiceCorporate(
             )}
 
             {/* ── Date Bar ── */}
+            {s.invoiceDate && (
             <div className="corp-date-bar">
                 <div className="corp-date-cell">
                     <div className="corp-date-label">Invoice Date</div>
-                    <div className="corp-date-value">{s.invoiceDate || '—'}</div>
+                    <div className="corp-date-value">{s.invoiceDate}</div>
                 </div>
                 <div className="corp-date-cell">
                     <div className="corp-date-label">Due Date</div>
-                    <div className="corp-date-value">{s.invoiceDate || '—'}</div>
+                    <div className="corp-date-value">{s.invoiceDate}</div>
                 </div>
             </div>
+            )}
 
             {/* ── Line Items Table ── */}
             <table className="corp-table">
