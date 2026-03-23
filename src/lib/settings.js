@@ -53,7 +53,14 @@ export function loadSettings() {
     return raw ? JSON.parse(raw) : {
       providerId: 'anthropic',
       modelId: 'claude-sonnet-4-20250514',
-      apiKeys: {}, // { anthropic: 'sk-ant-...', openai: 'sk-...', ... }
+      apiKeys: {},
+      brand: {
+        businessName: '',
+        businessAddress: '',
+        businessEmail: '',
+        businessPhone: '',
+        logo: null,
+      },
     }
   } catch {
     return { providerId: 'anthropic', modelId: 'claude-sonnet-4-20250514', apiKeys: {} }

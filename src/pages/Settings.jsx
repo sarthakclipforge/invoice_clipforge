@@ -188,6 +188,144 @@ export default function Settings() {
             </button>
           </div>
 
+          {/* Brand details card */}
+          <div style={{
+            background: '#191b22',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 16,
+            overflow: 'hidden',
+            marginBottom: 16,
+          }}>
+            <div style={{
+              padding: '18px 24px',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+            }}>
+              <div style={{
+                fontFamily: "'Manrope', sans-serif",
+                fontSize: 14, fontWeight: 700, color: '#fff',
+              }}>Brand Details</div>
+              <div style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 11.5, color: '#6B7280', marginTop: 2,
+              }}>This info will auto-fill into every new invoice</div>
+            </div>
+
+            <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Logo uploader */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 4 }}>
+                <div
+                  onClick={() => document.getElementById('brand-logo-input').click()}
+                  style={{
+                    width: 56, height: 56,
+                    borderRadius: 12,
+                    background: settings.brand?.logo ? 'transparent' : 'linear-gradient(145deg, #2EB67D 0%, #36D399 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', overflow: 'hidden', flexShrink: 0,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  {settings.brand?.logo ? (
+                    <img src={settings.brand.logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ color: '#fff', fontWeight: 800, fontSize: 18, fontFamily: "'Manrope', sans-serif" }}>
+                      {(settings.brand?.businessName || 'B').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 12, fontWeight: 600, color: '#c0c1ff', cursor: 'pointer' }}
+                    onClick={() => document.getElementById('brand-logo-input').click()}
+                  >Upload Logo</div>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 10.5, color: '#6B7280' }}>JPG, PNG, GIF (Max 2MB)</div>
+                </div>
+                <input
+                  id="brand-logo-input"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const f = e.target.files?.[0]
+                    if (!f) return
+                    const r = new FileReader()
+                    r.onload = ev => setSettings(prev => ({
+                      ...prev,
+                      brand: { ...(prev.brand || {}), logo: ev.target.result }
+                    }))
+                    r.readAsDataURL(f)
+                  }}
+                />
+              </div>
+
+              {/* Business Name */}
+              <div>
+                <label style={{ display: 'block', fontFamily: "'Manrope', sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Business Name</label>
+                <input
+                  type="text"
+                  value={settings.brand?.businessName || ''}
+                  onChange={e => setSettings(prev => ({ ...prev, brand: { ...(prev.brand || {}), businessName: e.target.value } }))}
+                  style={{
+                    width: '100%', height: 38, padding: '0 12px',
+                    borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(255,255,255,0.03)', color: '#fff',
+                    fontFamily: "'Inter', sans-serif", fontSize: 13,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Address */}
+              <div>
+                <label style={{ display: 'block', fontFamily: "'Manrope', sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Address</label>
+                <textarea
+                  rows={2}
+                  value={settings.brand?.businessAddress || ''}
+                  onChange={e => setSettings(prev => ({ ...prev, brand: { ...(prev.brand || {}), businessAddress: e.target.value } }))}
+                  style={{
+                    width: '100%', padding: '8px 12px',
+                    borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(255,255,255,0.03)', color: '#fff',
+                    fontFamily: "'Inter', sans-serif", fontSize: 13,
+                    outline: 'none', resize: 'vertical',
+                  }}
+                />
+              </div>
+
+              {/* Email + Phone row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ display: 'block', fontFamily: "'Manrope', sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Email</label>
+                  <input
+                    type="email"
+                    value={settings.brand?.businessEmail || ''}
+                    onChange={e => setSettings(prev => ({ ...prev, brand: { ...(prev.brand || {}), businessEmail: e.target.value } }))}
+                    style={{
+                      width: '100%', height: 38, padding: '0 12px',
+                      borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)', color: '#fff',
+                      fontFamily: "'Inter', sans-serif", fontSize: 13,
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontFamily: "'Manrope', sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6B7280', marginBottom: 4 }}>Phone</label>
+                  <input
+                    type="tel"
+                    value={settings.brand?.businessPhone || ''}
+                    onChange={e => setSettings(prev => ({ ...prev, brand: { ...(prev.brand || {}), businessPhone: e.target.value } }))}
+                    style={{
+                      width: '100%', height: 38, padding: '0 12px',
+                      borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)', color: '#fff',
+                      fontFamily: "'Inter', sans-serif", fontSize: 13,
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* AI settings card */}
           <div style={{
             background: '#191b22',
