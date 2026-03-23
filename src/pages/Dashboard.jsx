@@ -67,6 +67,7 @@ export default function Dashboard() {
                 if (!cancelled && local.length > 0) {
                     localData = local.map(inv => ({
                         id: inv.supabaseId,
+                        localId: inv.localId,
                         invoice_number: inv.invoiceNumber,
                         client_name: inv.clientName,
                         total_amount: inv.totalAmount,
@@ -421,7 +422,8 @@ export default function Dashboard() {
                 key={inv.id || inv.invoice_number || idx}
                 onClick={() => {
                   if (inv.id) navigate(`/app/${inv.id}`)
-                  else alert('This invoice has not been synced yet. Open the editor and save it first.')
+                  else if (inv.localId) navigate(`/app/local_${inv.localId}`)
+                  else alert('Cannot open invoice. Please try refreshing the page.')
                 }}
                 style={{
                   background: '#1A1D27',

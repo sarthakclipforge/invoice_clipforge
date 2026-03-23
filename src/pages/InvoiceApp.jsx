@@ -123,6 +123,17 @@ export default function InvoiceApp() {
         if (!id) return; // new invoice — no loading needed
 
         async function loadInvoice() {
+            // Handle offline-only "local_" prefixed IDs
+            if (id.startsWith('local_')) {
+                const lid = parseInt(id.replace('local_', ''), 10);
+                const local = await db.invoices.get(lid);
+                if (local?.invoice_data) {
+                    setS(prev => ({ ...prev, ...local.invoice_data, mode: 'edit' }));
+                    localIdRef.current = lid;
+                }
+                return; // skip Supabase fetch completely
+            }
+
             // Try IndexedDB first (works offline)
             const local = await getInvoiceBySupabaseId(id);
             if (local?.invoice_data) {
@@ -313,12 +324,13 @@ export default function InvoiceApp() {
 
     const handleSave = async () => {
         setIsSaving(true);
+        const activeSupabaseId = (id && !id.startsWith('local_')) ? id : null;
 
         const totalAmount = subtotal + taxAmt;
         const now = new Date().toISOString();
 
         const localPayload = {
-            supabaseId: id || null,
+            supabaseId: activeSupabaseId,
             invoiceNumber: s.invoiceNumber,
             clientName: s.clientName,
             totalAmount,
@@ -349,13 +361,13 @@ export default function InvoiceApp() {
                     updated_at: now,
                 };
 
-                if (id) {
+                if (activeSupabaseId) {
                     // UPDATE existing invoice
                     try {
                         const { error } = await supabase
                             .from('invoices')
                             .update(supabasePayload)
-                            .eq('id', id);
+                            .eq('id', activeSupabaseId);
 
                         if (error) {
                             showToast('Saved locally. Sync failed: ' + error.message, 'warning');
