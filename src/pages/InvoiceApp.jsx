@@ -61,7 +61,14 @@ function SectionHead({ title }) {
 }
 
 export default function InvoiceApp() {
-    const { id } = useParams();
+    const { id: routeId } = useParams();
+    const currentIdRef = useRef(routeId);
+    
+    // Sync currentIdRef with routeId when navigating from dashboard
+    useEffect(() => {
+        if (routeId) currentIdRef.current = routeId;
+    }, [routeId]);
+
     const navigate = useNavigate();
     const [s, setS] = useState(INIT);
     const [isSaving, setIsSaving] = useState(false);
@@ -161,9 +168,10 @@ export default function InvoiceApp() {
     }, []);
 
     useEffect(() => {
-        if (!id) return; // new invoice — no loading needed
+        if (!routeId) return; // new invoice — no loading needed
 
         async function loadInvoice() {
+            const id = currentIdRef.current;
             // Handle offline-only "local_" prefixed IDs
             if (id.startsWith('local_')) {
                 const lid = parseInt(id.replace('local_', ''), 10);
@@ -207,7 +215,7 @@ export default function InvoiceApp() {
         }
 
         loadInvoice();
-    }, [id]);
+    }, [routeId]);
 
     const upd = (k) => (v) => setS(p => ({ ...p, [k]: v }));
     const subtotal = s.lineItems.reduce((a, i) => a + i.qty * i.rate, 0);
@@ -363,9 +371,26 @@ export default function InvoiceApp() {
         }
     }
 
-    const handleSave = async () => {
-        setIsSaving(true);
-        const activeSupabaseId = (id && !id.startsWith('local_')) ? id : null;
+    const prevSRef = useRef(s);
+
+    useEffect(() => {
+        if (JSON.stringify(s) === JSON.stringify(prevSRef.current)) return;
+        if (!s.clientName && !s.businessName && s.lineItems.length === 0) return;
+        
+        prevSRef.current = s;
+
+        const timer = setTimeout(() => {
+            performSave(true);
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, [s]);
+
+    const handleSave = () => performSave(false);
+
+    const performSave = async (isAutoSave = false) => {
+        if (!isAutoSave) setIsSaving(true);
+        const activeSupabaseId = (currentIdRef.current && !currentIdRef.current.startsWith('local_')) ? currentIdRef.current : null;
 
         const totalAmount = subtotal + taxAmt;
         const now = new Date().toISOString();
@@ -411,17 +436,19 @@ export default function InvoiceApp() {
                             .eq('id', activeSupabaseId);
 
                         if (error) {
-                            if (error.message && error.message.includes('Failed to fetch')) {
-                                showToast('Saved locally. Will sync when connection restores.', 'warning');
-                            } else {
-                                showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                            if (!isAutoSave) {
+                                if (error.message && error.message.includes('Failed to fetch')) {
+                                    showToast('Saved locally. Will sync when connection restores.', 'warning');
+                                } else {
+                                    showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                                }
                             }
                         } else {
                             await db.invoices.update(localId, { synced: 1 });
-                            showToast('Invoice updated!', 'success');
+                            if (!isAutoSave) showToast('Invoice updated!', 'success');
                         }
                     } catch {
-                        showToast('Saved locally. Will sync when connection restores.', 'warning');
+                        if (!isAutoSave) showToast('Saved locally. Will sync when connection restores.', 'warning');
                     }
                 } else {
                     // INSERT new invoice
@@ -433,31 +460,40 @@ export default function InvoiceApp() {
                             .single();
 
                         if (error) {
-                            if (error.message && error.message.includes('Failed to fetch')) {
-                                showToast('Saved locally. Will sync when connection restores.', 'warning');
-                            } else {
-                                showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                            if (!isAutoSave) {
+                                if (error.message && error.message.includes('Failed to fetch')) {
+                                    showToast('Saved locally. Will sync when connection restores.', 'warning');
+                                } else {
+                                    showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                                }
                             }
                         } else if (data?.id) {
                             await db.invoices.update(localId, { synced: 1, supabaseId: data.id });
-                            navigate(`/app/${data.id}`, { replace: true });
-                            showToast('Invoice saved!', 'success');
+                            currentIdRef.current = data.id; // Record the new ID so subsequent auto-saves update
+                            if (isAutoSave) {
+                                window.history.replaceState(null, '', `/app/${data.id}`);
+                            } else {
+                                navigate(`/app/${data.id}`, { replace: true });
+                                showToast('Invoice saved!', 'success');
+                            }
                         } else {
-                            showToast('Saved locally. Sync may have failed.', 'warning');
+                            if (!isAutoSave) showToast('Saved locally. Sync may have failed.', 'warning');
                         }
                     } catch {
-                        showToast('Saved locally. Will sync when connection restores.', 'warning');
+                        if (!isAutoSave) showToast('Saved locally. Will sync when connection restores.', 'warning');
                     }
                 }
             } else {
-                showToast('Saved offline. Will sync when reconnected.', 'warning');
+                if (!isAutoSave) showToast('Saved offline. Will sync when reconnected.', 'warning');
             }
         } catch (err) {
-            showToast('Save failed: ' + err.message, 'error');
+            if (!isAutoSave) showToast('Save failed: ' + err.message, 'error');
         } finally {
-            setIsSaving(false);
-            setSavedFeedback(true);
-            setTimeout(() => setSavedFeedback(false), 2000);
+            if (!isAutoSave) {
+                setIsSaving(false);
+                setSavedFeedback(true);
+                setTimeout(() => setSavedFeedback(false), 2000);
+            }
         }
     };
 
