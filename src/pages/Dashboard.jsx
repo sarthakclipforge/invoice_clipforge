@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, ChevronRight, Trash2, Search, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { getAllInvoicesLocal, clearSession, deleteInvoiceBySupabaseId, db } from '../lib/db'
+import { formatMoney } from '../lib/currency'
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -483,10 +484,7 @@ export default function Dashboard() {
                   fontSize: 15, fontWeight: 700, color: '#ffffff',
                   flexShrink: 0,
                 }}>
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: inv.currency || 'USD',
-                  }).format(inv.total_amount || 0)}
+                  {formatMoney(inv.total_amount, inv.currency)}
                 </div>
                 <div style={{
                   fontSize: 11, color: '#6B7280', flexShrink: 0,
