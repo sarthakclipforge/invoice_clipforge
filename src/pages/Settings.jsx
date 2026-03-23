@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Users, Settings as SettingsIcon, Eye, EyeOff, ExternalLink, Check, LogOut, Plus } from 'lucide-react'
 import { clearSession } from '../lib/db'
