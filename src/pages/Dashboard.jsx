@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, ChevronRight, Trash2, Search, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
-import { getAllInvoicesLocal, clearSession, deleteInvoiceBySupabaseId, db } from '../lib/db'
+import { getAllInvoicesLocal, clearSession, deleteInvoiceBySupabaseId, deleteInvoiceByLocalId, db } from '../lib/db'
 import { formatMoney } from '../lib/currency'
 
 export default function Dashboard() {
