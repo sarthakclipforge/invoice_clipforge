@@ -112,6 +112,27 @@ export default function InvoiceApp() {
       setClientSuggestions([])
     }
 
+    // Sync clients from Supabase in the background to ensure autocomplete is up-to-date
+    useEffect(() => {
+      if (navigator.onLine) {
+        supabase.from('clients').select('*').then(({ data, error }) => {
+          if (!error && data) {
+            data.forEach(row => {
+              saveClientLocally({
+                id: row.id,
+                supabaseId: row.id,
+                name: row.name,
+                email: row.email,
+                address: row.address,
+                shipAddress: row.ship_address,
+                updatedAt: row.updated_at
+              })
+            })
+          }
+        })
+      }
+    }, [])
+
     function showToast(msg, type = 'success') {
         setToastMsg(msg);
         setToastType(type);
