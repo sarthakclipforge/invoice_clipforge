@@ -735,9 +735,8 @@ export default function InvoiceApp() {
             <div>
                 <div className="grid-2">
                     <Field label="Invoice #" value={s.invoiceNumber} onChange={upd("invoiceNumber")} />
-                    <Field label="Date" value={s.invoiceDate} onChange={upd("invoiceDate")} />
+                    <Field label="Date" value={s.invoiceDate} onChange={upd("invoiceDate")} type="date" />
                 </div>
-                <Field label="Terms" value={s.terms} onChange={upd("terms")} />
                 <div className="grid-2">
                     <Field label="Tax %" value={s.taxRate} onChange={v => upd("taxRate")(parseFloat(v) || 0)} type="number" />
                     <div className="field-group">
@@ -865,6 +864,8 @@ export default function InvoiceApp() {
                         <div>
                             <div className="inv-biz-name">{s.businessName}</div>
                             <div className="inv-biz-address">{s.businessAddress}</div>
+                            {s.businessEmail && <div className="inv-biz-contact">{s.businessEmail}</div>}
+                            {s.businessPhone && <div className="inv-biz-contact">{s.businessPhone}</div>}
                         </div>
                     </div>
                     <div className="inv-title-box">

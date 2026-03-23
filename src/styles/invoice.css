@@ -460,6 +460,12 @@
     white-space: pre-line;
 }
 
+.inv-biz-contact {
+    color: #71717a;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
 .inv-title-box {
     text-align: right;
 }
