@@ -446,6 +446,7 @@ export default function InvoiceApp() {
                     invoice_data: localPayload.invoice_data,
                     updated_at: now,
                 };
+                console.log('[Sync] Attempting Supabase write...', { activeSupabaseId, online: navigator.onLine });
 
                 if (activeSupabaseId) {
                     // UPDATE existing invoice
@@ -456,6 +457,7 @@ export default function InvoiceApp() {
                             .eq('id', activeSupabaseId);
 
                         if (error) {
+                            console.error('[Sync] Supabase UPDATE error:', error);
                             if (!isAutoSave) {
                                 if (error.message && error.message.includes('Failed to fetch')) {
                                     showToast('Saved locally. Will sync when connection restores.', 'warning');
@@ -464,10 +466,12 @@ export default function InvoiceApp() {
                                 }
                             }
                         } else {
+                            console.log('[Sync] Supabase UPDATE success for', activeSupabaseId);
                             await db.invoices.update(localId, { synced: 1 });
                             if (!isAutoSave) showToast('Invoice updated!', 'success');
                         }
-                    } catch {
+                    } catch (err) {
+                        console.error('[Sync] Supabase UPDATE network error:', err);
                         if (!isAutoSave) showToast('Saved locally. Will sync when connection restores.', 'warning');
                     }
                 } else {
@@ -480,6 +484,7 @@ export default function InvoiceApp() {
                             .single();
 
                         if (error) {
+                            console.error('[Sync] Supabase INSERT error:', error);
                             if (!isAutoSave) {
                                 if (error.message && error.message.includes('Failed to fetch')) {
                                     showToast('Saved locally. Will sync when connection restores.', 'warning');
@@ -488,6 +493,7 @@ export default function InvoiceApp() {
                                 }
                             }
                         } else if (data?.id) {
+                            console.log('[Sync] Supabase INSERT success, new id:', data.id);
                             await db.invoices.update(localId, { synced: 1, supabaseId: data.id });
                             currentIdRef.current = data.id; // Record the new ID so subsequent auto-saves update
                             if (isAutoSave) {
@@ -499,7 +505,8 @@ export default function InvoiceApp() {
                         } else {
                             if (!isAutoSave) showToast('Saved locally. Sync may have failed.', 'warning');
                         }
-                    } catch {
+                    } catch (err) {
+                        console.error('[Sync] Supabase INSERT network error:', err);
                         if (!isAutoSave) showToast('Saved locally. Will sync when connection restores.', 'warning');
                     }
                 }

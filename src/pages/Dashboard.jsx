@@ -63,12 +63,12 @@ export default function Dashboard() {
         async function loadInvoices() {
             setLoading(true);
 
-            // Step 1 — try IndexedDB first (instant, works offline)
+            // Step 1 — load IndexedDB first (instant, works offline)
             let localData = [];
             try {
-                const local = await getAllInvoicesLocal();
-                if (!cancelled && local.length > 0) {
-                    localData = local.map(inv => ({
+                localData = await getAllInvoicesLocal();
+                if (!cancelled && localData.length > 0) {
+                    setInvoices(localData.map(inv => ({
                         id: inv.supabaseId,
                         localId: inv.localId,
                         invoice_number: inv.invoiceNumber,
@@ -78,15 +78,14 @@ export default function Dashboard() {
                         created_at: inv.updatedAt,
                         updated_at: inv.updatedAt,
                         _synced: inv.synced === 1,
-                    }));
-                    setInvoices(localData);
+                    })));
                     setLoading(false);
                 }
             } catch {
                 // IndexedDB unavailable — continue to Supabase
             }
 
-            // Step 2 — always attempt Supabase if online, regardless of local results
+            // Step 2 — fetch from Supabase if online, MERGE with local
             if (navigator.onLine) {
                 try {
                     const { data, error } = await supabase
@@ -94,14 +93,99 @@ export default function Dashboard() {
                         .select('*')
                         .order('created_at', { ascending: false });
 
-                    if (!cancelled) {
-                        if (!error && data) {
-                            setInvoices(data.map(inv => ({ ...inv, _synced: true })));
+                    console.log('[Dashboard Sync]', { data: data?.length, error });
+
+                    if (!cancelled && !error && data) {
+                        // Sync Supabase records into IndexedDB so other pages can load them
+                        for (const inv of data) {
+                            try {
+                                const existing = await db.invoices.where('supabaseId').equals(inv.id).first();
+                                if (!existing) {
+                                    // This invoice exists in Supabase but not locally — pull it in
+                                    await db.invoices.put({
+                                        supabaseId: inv.id,
+                                        invoiceNumber: inv.invoice_number || '',
+                                        clientName: inv.client_name || '',
+                                        totalAmount: inv.total_amount || 0,
+                                        currency: inv.currency || 'USD',
+                                        invoice_data: inv.invoice_data || {},
+                                        updatedAt: inv.updated_at || inv.created_at,
+                                        synced: 1,
+                                    });
+                                } else {
+                                    // Update local record with latest Supabase data
+                                    const supaDate = new Date(inv.updated_at || inv.created_at || 0).getTime();
+                                    const localDate = new Date(existing.updatedAt || 0).getTime();
+                                    if (supaDate > localDate) {
+                                        await db.invoices.update(existing.localId, {
+                                            invoiceNumber: inv.invoice_number || existing.invoiceNumber,
+                                            clientName: inv.client_name || existing.clientName,
+                                            totalAmount: inv.total_amount ?? existing.totalAmount,
+                                            currency: inv.currency || existing.currency,
+                                            invoice_data: inv.invoice_data || existing.invoice_data,
+                                            updatedAt: inv.updated_at || inv.created_at,
+                                            synced: 1,
+                                        });
+                                    }
+                                }
+                            } catch (syncErr) {
+                                console.warn('[Dashboard Sync] IndexedDB sync error for', inv.id, syncErr);
+                            }
                         }
+
+                        // Push any unsynced local invoices to Supabase
+                        try {
+                            const pending = localData.filter(l => l.synced === 0 && !l.supabaseId);
+                            for (const p of pending) {
+                                const { data: inserted, error: insErr } = await supabase
+                                    .from('invoices')
+                                    .insert({
+                                        invoice_number: p.invoiceNumber || '',
+                                        client_name: p.clientName || '',
+                                        total_amount: p.totalAmount || 0,
+                                        currency: p.currency || 'USD',
+                                        invoice_data: p.invoice_data || {},
+                                        updated_at: p.updatedAt,
+                                    })
+                                    .select('id')
+                                    .single();
+                                if (!insErr && inserted?.id) {
+                                    await db.invoices.update(p.localId, { synced: 1, supabaseId: inserted.id });
+                                    console.log('[Dashboard Sync] Pushed local invoice to Supabase:', inserted.id);
+                                }
+                            }
+                        } catch (pushErr) {
+                            console.warn('[Dashboard Sync] Push pending error:', pushErr);
+                        }
+
+                        // Merge: Supabase data + any local-only invoices
+                        const supabaseIds = new Set(data.map(d => d.id));
+                        const localOnly = localData
+                            .filter(l => !l.supabaseId || !supabaseIds.has(l.supabaseId))
+                            .map(inv => ({
+                                id: inv.supabaseId,
+                                localId: inv.localId,
+                                invoice_number: inv.invoiceNumber,
+                                client_name: inv.clientName,
+                                total_amount: inv.totalAmount,
+                                currency: inv.currency,
+                                created_at: inv.updatedAt,
+                                updated_at: inv.updatedAt,
+                                _synced: false,
+                            }));
+
+                        const merged = [
+                            ...data.map(inv => ({ ...inv, _synced: true })),
+                            ...localOnly,
+                        ];
+                        setInvoices(merged);
                         setLoading(false);
+                    } else if (error) {
+                        console.error('[Dashboard Sync] Supabase error:', error);
+                        if (!cancelled) setLoading(false);
                     }
-                } catch {
-                    // Supabase unreachable — keep local data
+                } catch (err) {
+                    console.error('[Dashboard Sync] Network error:', err);
                     if (!cancelled) setLoading(false);
                 }
             } else {
