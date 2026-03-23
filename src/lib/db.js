@@ -58,3 +58,18 @@ export async function getPendingInvoices() {
 export async function markSynced(localId, supabaseId) {
   await db.invoices.update(localId, { synced: 1, supabaseId })
 }
+
+export async function deleteInvoiceBySupabaseId(supabaseId) {
+  if (!supabaseId) return
+  await db.invoices.where('supabaseId').equals(supabaseId).delete()
+}
+
+export async function deleteInvoiceByLocalId(localId) {
+  if (!localId) return
+  await db.invoices.delete(localId)
+}
+
+export async function getLocalIdForSupabaseId(supabaseId) {
+  const record = await db.invoices.where('supabaseId').equals(supabaseId).first()
+  return record?.localId ?? null
+}

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Receipt, Download, FileText, Image as ImageIcon, Sparkles, Plus, X, Save, ChevronLeft, Eye, Edit2 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
-import { saveInvoiceLocally, getInvoiceBySupabaseId, db } from "../lib/db";
+import { saveInvoiceLocally, getInvoiceBySupabaseId, getLocalIdForSupabaseId, db } from "../lib/db";
 import { getActiveApiKey, getActiveProvider, getActiveModel, loadSettings } from '../lib/settings';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -81,13 +81,22 @@ export default function InvoiceApp() {
     const [isSaving, setIsSaving] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [savedFeedback, setSavedFeedback] = useState(false);
+    const [toastMsg, setToastMsg] = useState('');       // toast text
+    const [toastType, setToastType] = useState('success'); // 'success' | 'warning' | 'error'
     const fileRef = useRef();
     const invoiceRef = useRef(null);
     const nextId = useRef(3);
+    const localIdRef = useRef(null); // tracks Dexie localId to prevent duplicates
     const documentContainerRef = useRef();
     const invoiceWrapperRef = useRef();
     const invoicePaperRef = useRef();
     const [scale, setScale] = useState(1);
+
+    function showToast(msg, type = 'success') {
+        setToastMsg(msg);
+        setToastType(type);
+        setTimeout(() => { setToastMsg(''); }, 3500);
+    }
 
     // ResizeObserver for scaling the invoice document
     useEffect(() => {
@@ -118,18 +127,29 @@ export default function InvoiceApp() {
             const local = await getInvoiceBySupabaseId(id);
             if (local?.invoice_data) {
                 setS(prev => ({ ...prev, ...local.invoice_data, mode: 'edit' }));
+                localIdRef.current = local.localId; // capture localId for future saves
+            }
+
+            // Also look up localId separately in case local had no invoice_data
+            if (!localIdRef.current) {
+                const lid = await getLocalIdForSupabaseId(id);
+                if (lid) localIdRef.current = lid;
             }
 
             // Refresh from Supabase if online (get latest version)
             if (navigator.onLine) {
-                const { data, error } = await supabase
-                    .from('invoices')
-                    .select('invoice_data')
-                    .eq('id', id)
-                    .single();
+                try {
+                    const { data, error } = await supabase
+                        .from('invoices')
+                        .select('invoice_data')
+                        .eq('id', id)
+                        .single();
 
-                if (!error && data?.invoice_data) {
-                    setS(prev => ({ ...prev, ...data.invoice_data, mode: 'edit' }));
+                    if (!error && data?.invoice_data) {
+                        setS(prev => ({ ...prev, ...data.invoice_data, mode: 'edit' }));
+                    }
+                } catch {
+                    // Supabase unreachable — using local data
                 }
             }
         }
@@ -292,7 +312,6 @@ export default function InvoiceApp() {
     }
 
     const handleSave = async () => {
-        console.log('SAVE TRIGGERED', s)
         setIsSaving(true);
 
         const totalAmount = subtotal + taxAmt;
@@ -309,10 +328,15 @@ export default function InvoiceApp() {
             synced: 0,
         };
 
+        // Reuse existing localId to prevent IndexedDB duplicates
+        if (localIdRef.current) {
+            localPayload.localId = localIdRef.current;
+        }
+
         try {
             // Always save locally first
             const localId = await saveInvoiceLocally(localPayload);
-            console.log('Saved locally, localId:', localId)
+            localIdRef.current = localId; // store for future saves
 
             // Push to Supabase if online
             if (navigator.onLine) {
@@ -327,48 +351,48 @@ export default function InvoiceApp() {
 
                 if (id) {
                     // UPDATE existing invoice
-                    console.log('Updating invoice:', id)
-                    const { error } = await supabase
-                        .from('invoices')
-                        .update(supabasePayload)
-                        .eq('id', id);
+                    try {
+                        const { error } = await supabase
+                            .from('invoices')
+                            .update(supabasePayload)
+                            .eq('id', id);
 
-                    if (error) {
-                        console.error('Supabase update error:', error)
-                        alert('Invoice saved locally but failed to sync: ' + error.message);
-                    } else {
-                        await db.invoices.update(localId, { synced: 1 });
-                        alert('Invoice updated successfully!');
+                        if (error) {
+                            showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                        } else {
+                            await db.invoices.update(localId, { synced: 1 });
+                            showToast('Invoice updated!', 'success');
+                        }
+                    } catch {
+                        showToast('Saved locally. Will sync when connection restores.', 'warning');
                     }
                 } else {
                     // INSERT new invoice
-                    console.log('Inserting new invoice')
-                    const { data, error } = await supabase
-                        .from('invoices')
-                        .insert(supabasePayload)
-                        .select('id')
-                        .single();
+                    try {
+                        const { data, error } = await supabase
+                            .from('invoices')
+                            .insert(supabasePayload)
+                            .select('id')
+                            .single();
 
-                    console.log('Supabase insert result:', { data, error })
-
-                    if (error) {
-                        console.error('Supabase insert error:', error)
-                        alert('Invoice saved locally but failed to sync: ' + error.message);
-                    } else if (data?.id) {
-                        await db.invoices.update(localId, { synced: 1, supabaseId: data.id });
-                        navigate(`/app/${data.id}`, { replace: true });
-                        alert('Invoice saved to Dashboard!');
-                    } else {
-                        console.error('Supabase returned no data:', data)
-                        alert('Invoice saved locally. Sync may have failed.');
+                        if (error) {
+                            showToast('Saved locally. Sync failed: ' + error.message, 'warning');
+                        } else if (data?.id) {
+                            await db.invoices.update(localId, { synced: 1, supabaseId: data.id });
+                            navigate(`/app/${data.id}`, { replace: true });
+                            showToast('Invoice saved!', 'success');
+                        } else {
+                            showToast('Saved locally. Sync may have failed.', 'warning');
+                        }
+                    } catch {
+                        showToast('Saved locally. Will sync when connection restores.', 'warning');
                     }
                 }
             } else {
-                alert('Saved offline. Will sync when back online.');
+                showToast('Saved offline. Will sync when reconnected.', 'warning');
             }
         } catch (err) {
-            console.error('Save exception:', err)
-            alert('Error saving invoice: ' + err.message);
+            showToast('Save failed: ' + err.message, 'error');
         } finally {
             setIsSaving(false);
             setSavedFeedback(true);
@@ -935,6 +959,33 @@ export default function InvoiceApp() {
                     {InvoiceDoc}
                 </main>
             </div>
+
+            {/* Toast notification */}
+            {toastMsg && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: 24, left: '50%', transform: 'translateX(-50%)',
+                    zIndex: 999,
+                    padding: '10px 20px',
+                    borderRadius: 10,
+                    fontSize: 13, fontWeight: 600,
+                    fontFamily: "'Manrope', sans-serif",
+                    color: toastType === 'success' ? '#d1fae5'
+                         : toastType === 'warning' ? '#fef3c7'
+                         : '#fecaca',
+                    background: toastType === 'success' ? 'rgba(5,150,105,0.9)'
+                              : toastType === 'warning' ? 'rgba(180,120,10,0.9)'
+                              : 'rgba(185,28,28,0.9)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+                    maxWidth: 400, textAlign: 'center',
+                    animation: 'fadeInUp 250ms ease',
+                    whiteSpace: 'nowrap',
+                }}>
+                    {toastType === 'success' ? '✓ ' : toastType === 'warning' ? '⚠ ' : '✕ '}
+                    {toastMsg}
+                </div>
+            )}
         </div>
     );
 }

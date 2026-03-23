@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, ChevronRight, Trash2 } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart2, Settings, Plus, Receipt, ChevronRight, Trash2, Search, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
-import { getAllInvoicesLocal, clearSession } from '../lib/db'
+import { getAllInvoicesLocal, clearSession, deleteInvoiceBySupabaseId, db } from '../lib/db'
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -12,22 +12,29 @@ export default function Dashboard() {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [invoiceToDelete, setInvoiceToDelete] = useState(null);
 
-    async function handleDeleteInvoice(e, id) {
-      e.stopPropagation()
-      e.preventDefault()
-      setInvoiceToDelete(id)
-    }
+    // Search, sort, filter state
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortBy, setSortBy] = useState('date-desc');  // 'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc' | 'name-asc' | 'name-desc'
+    const [showSortMenu, setShowSortMenu] = useState(false);
 
     async function confirmDelete() {
       if (invoiceToDelete === null || invoiceToDelete === undefined) return
       const inv = invoices.find((v, i) => (v.id || `local-${i}`) === invoiceToDelete)
       try {
-        // Only call Supabase delete if the invoice has a real ID
+        // Delete from Supabase if it has a real ID
         if (inv?.id) {
-          const { error } = await supabase.from('invoices').delete().eq('id', inv.id)
-          if (error) console.error('Supabase delete error:', error)
+          try {
+            const { error } = await supabase.from('invoices').delete().eq('id', inv.id)
+            if (error) console.error('Supabase delete error:', error)
+          } catch {
+            // Supabase unreachable — still delete locally
+          }
         }
-        // Always remove from local state
+        // Delete from IndexedDB
+        if (inv?.id) {
+          await deleteInvoiceBySupabaseId(inv.id)
+        }
+        // Remove from React state
         setInvoices(prev => prev.filter((v, i) => (v.id || `local-${i}`) !== invoiceToDelete))
       } catch (err) {
         console.error('Delete failed:', err)
@@ -54,10 +61,11 @@ export default function Dashboard() {
             setLoading(true);
 
             // Step 1 — try IndexedDB first (instant, works offline)
+            let localData = [];
             try {
                 const local = await getAllInvoicesLocal();
                 if (!cancelled && local.length > 0) {
-                    setInvoices(local.map(inv => ({
+                    localData = local.map(inv => ({
                         id: inv.supabaseId,
                         invoice_number: inv.invoiceNumber,
                         client_name: inv.clientName,
@@ -65,7 +73,9 @@ export default function Dashboard() {
                         currency: inv.currency,
                         created_at: inv.updatedAt,
                         updated_at: inv.updatedAt,
-                    })));
+                        _synced: inv.synced === 1,
+                    }));
+                    setInvoices(localData);
                     setLoading(false);
                 }
             } catch {
@@ -82,16 +92,15 @@ export default function Dashboard() {
 
                     if (!cancelled) {
                         if (!error && data) {
-                            setInvoices(data);
+                            setInvoices(data.map(inv => ({ ...inv, _synced: true })));
                         }
-                        // Always stop loading here — Supabase is the source of truth when online
                         setLoading(false);
                     }
                 } catch {
+                    // Supabase unreachable — keep local data
                     if (!cancelled) setLoading(false);
                 }
             } else {
-                // Offline and IndexedDB was empty
                 if (!cancelled) setLoading(false);
             }
         }
@@ -106,10 +115,53 @@ export default function Dashboard() {
         navigate('/');
     };
 
+    // ── Filtered + sorted invoices ──────────────────────────────────────────
+    const displayedInvoices = useMemo(() => {
+        let list = [...invoices];
+
+        // Search
+        if (searchTerm.trim()) {
+            const q = searchTerm.toLowerCase();
+            list = list.filter(inv =>
+                (inv.invoice_number || '').toLowerCase().includes(q) ||
+                (inv.client_name || '').toLowerCase().includes(q)
+            );
+        }
+
+        // Sort
+        list.sort((a, b) => {
+            switch (sortBy) {
+                case 'date-asc':
+                    return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+                case 'date-desc':
+                    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                case 'amount-desc':
+                    return (b.total_amount || 0) - (a.total_amount || 0);
+                case 'amount-asc':
+                    return (a.total_amount || 0) - (b.total_amount || 0);
+                case 'name-asc':
+                    return (a.client_name || '').localeCompare(b.client_name || '');
+                case 'name-desc':
+                    return (b.client_name || '').localeCompare(a.client_name || '');
+                default:
+                    return 0;
+            }
+        });
+
+        return list;
+    }, [invoices, searchTerm, sortBy]);
+
+    const sortLabels = {
+        'date-desc': 'Newest first',
+        'date-asc': 'Oldest first',
+        'amount-desc': 'Highest amount',
+        'amount-asc': 'Lowest amount',
+        'name-asc': 'Client A→Z',
+        'name-desc': 'Client Z→A',
+    };
+
     return (
   <div style={{ minHeight: '100dvh', background: '#0F1117' }}>
-
-
 
     {/* ── Sidebar ── */}
     <aside className="dash-sidebar" style={{
@@ -169,7 +221,7 @@ export default function Dashboard() {
     {/* ── Offline banner ── */}
     {!isOnline && (
       <div style={{
-        position: 'fixed', top: 56, left: 200, right: 0, zIndex: 39,
+        position: 'fixed', top: 0, left: 200, right: 0, zIndex: 39,
         background: 'rgba(249,115,22,0.12)',
         borderBottom: '1px solid rgba(249,115,22,0.25)',
         padding: '6px 24px',
@@ -195,7 +247,7 @@ export default function Dashboard() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 36,
+          marginBottom: 20,
         }}>
           <div>
             <h1 style={{
@@ -229,6 +281,114 @@ export default function Dashboard() {
           </button>
         </div>
 
+        {/* ── Search + Sort controls ── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          marginBottom: 20, width: '100%',
+          flexWrap: 'wrap',
+        }}>
+          {/* Search */}
+          <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
+            <Search size={14} style={{
+              position: 'absolute', left: 10,
+              top: '50%', transform: 'translateY(-50%)',
+              color: '#6B7280', pointerEvents: 'none',
+            }} />
+            <input
+              placeholder="Search invoices…"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                height: 38,
+                paddingLeft: 32, paddingRight: 12,
+                background: '#1E2130',
+                border: '1px solid #2A2D3A',
+                borderRadius: 8,
+                color: '#e2e2eb', fontSize: 13,
+                fontFamily: "'Inter', sans-serif",
+                outline: 'none',
+                transition: 'border-color 150ms ease',
+              }}
+              onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.5)'}
+              onBlur={e => e.target.style.borderColor = '#2A2D3A'}
+            />
+          </div>
+
+          {/* Sort dropdown */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowSortMenu(!showSortMenu)}
+              style={{
+                height: 38, padding: '0 12px',
+                borderRadius: 8,
+                border: '1px solid #2A2D3A',
+                background: '#1E2130',
+                color: '#e2e2eb',
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 12, fontWeight: 500,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+                whiteSpace: 'nowrap',
+                transition: 'border-color 150ms ease',
+              }}
+            >
+              <ArrowUpDown size={13} color="#6B7280" />
+              {sortLabels[sortBy]}
+              <ChevronDown size={12} color="#6B7280" />
+            </button>
+
+            {showSortMenu && (
+              <>
+                <div
+                  onClick={() => setShowSortMenu(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                />
+                <div style={{
+                  position: 'absolute', top: 42, right: 0, zIndex: 100,
+                  background: '#191b22',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 10,
+                  padding: '4px 0',
+                  minWidth: 170,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                }}>
+                  {Object.entries(sortLabels).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => { setSortBy(key); setShowSortMenu(false); }}
+                      style={{
+                        display: 'block', width: '100%',
+                        padding: '8px 14px',
+                        border: 'none', background: sortBy === key ? 'rgba(99,102,241,0.12)' : 'transparent',
+                        color: sortBy === key ? '#c0c1ff' : '#e2e2eb',
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: 12, fontWeight: sortBy === key ? 600 : 400,
+                        textAlign: 'left', cursor: 'pointer',
+                        transition: 'background 100ms ease',
+                      }}
+                      onMouseEnter={e => { if (sortBy !== key) e.currentTarget.style.background = 'rgba(255,255,255,0.04)' }}
+                      onMouseLeave={e => { if (sortBy !== key) e.currentTarget.style.background = 'transparent' }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── Invoice count ── */}
+        {!loading && invoices.length > 0 && (
+          <div style={{
+            fontSize: 12, color: '#6B7280', marginBottom: 12,
+            fontFamily: "'Inter', sans-serif",
+          }}>
+            {searchTerm ? `${displayedInvoices.length} of ${invoices.length} invoices` : `${invoices.length} invoice${invoices.length !== 1 ? 's' : ''}`}
+          </div>
+        )}
+
         {/* Invoice list */}
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
@@ -240,19 +400,23 @@ export default function Dashboard() {
               animation: 'spin 0.7s linear infinite',
             }} />
           </div>
-        ) : invoices.length === 0 ? (
+        ) : displayedInvoices.length === 0 ? (
           <div style={{
             textAlign: 'center', paddingTop: 80,
             color: '#6B7280',
             fontFamily: "'Manrope', sans-serif",
           }}>
             <Receipt size={36} style={{ marginBottom: 14, opacity: 0.25 }} />
-            <p style={{ fontSize: 15, fontWeight: 600, margin: 0, marginBottom: 6 }}>No invoices yet</p>
-            <p style={{ fontSize: 13, margin: 0 }}>Create your first invoice to get started.</p>
+            <p style={{ fontSize: 15, fontWeight: 600, margin: 0, marginBottom: 6 }}>
+              {searchTerm ? 'No invoices match your search' : 'No invoices yet'}
+            </p>
+            <p style={{ fontSize: 13, margin: 0 }}>
+              {searchTerm ? 'Try a different search term.' : 'Create your first invoice to get started.'}
+            </p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {invoices.map((inv, idx) => (
+            {displayedInvoices.map((inv, idx) => (
               <div
                 key={inv.id || inv.invoice_number || idx}
                 onClick={() => {
@@ -277,20 +441,35 @@ export default function Dashboard() {
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
-                <div style={{
-                  width: 36, height: 36, flexShrink: 0,
-                  borderRadius: 8,
-                  background: '#282a30',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Receipt size={16} color="#c0c1ff" />
+                {/* Icon + sync dot */}
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <div style={{
+                    width: 36, height: 36,
+                    borderRadius: 8,
+                    background: '#282a30',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Receipt size={16} color="#c0c1ff" />
+                  </div>
+                  {/* Sync status dot */}
+                  <div
+                    title={inv._synced ? 'Synced' : 'Pending sync'}
+                    style={{
+                      position: 'absolute', bottom: -2, right: -2,
+                      width: 8, height: 8,
+                      borderRadius: '50%',
+                      background: inv._synced ? '#10B981' : '#F59E0B',
+                      border: '2px solid #1A1D27',
+                    }}
+                  />
                 </div>
+
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontFamily: 'ui-monospace, monospace',
                     fontSize: 13, color: '#ffffff',
                     marginBottom: 2,
-                  }}>#{inv.invoice_number}</div>
+                  }}>#{inv.invoice_number || '—'}</div>
                   <div style={{
                     fontSize: 12, color: '#6B7280',
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -322,7 +501,6 @@ export default function Dashboard() {
                     e.stopPropagation()
                     e.preventDefault()
                     const identifier = inv.id || `local-${idx}`
-                    console.log('DELETE CLICKED', identifier)
                     setInvoiceToDelete(identifier)
                   }}
                   style={{
