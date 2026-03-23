@@ -1,0 +1,369 @@
+/* src/styles/invoice-corporate.css — Corporate Green Invoice Template */
+
+.invoice-corporate {
+    width: 800px;
+    min-height: 1100px;
+    background: #ffffff;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    color: #2d2d2d;
+    padding: 48px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.corp-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.corp-logo {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: #2EB67D;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.corp-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.corp-logo-initials {
+    color: #ffffff;
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.corp-biz-block {
+    text-align: right;
+    flex: 1;
+    padding-left: 24px;
+}
+
+.corp-biz-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+
+.corp-biz-detail {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+/* ── INVOICE Title ──────────────────────────────────── */
+.corp-divider {
+    border: none;
+    border-top: 2px solid #e0e0e0;
+    margin: 16px 0 8px 0;
+}
+
+.corp-title {
+    text-align: center;
+    font-family: 'Poppins', 'Inter', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d2d2d;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+}
+
+/* ── Bill To / Invoice # Row ────────────────────────── */
+.corp-info-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+    margin-bottom: 8px;
+}
+
+.corp-info-left {
+    flex: 1;
+}
+
+.corp-info-right {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.corp-info-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.corp-client-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+}
+
+.corp-client-address {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.corp-invoice-number {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+/* ── Ship To ────────────────────────────────────────── */
+.corp-ship-section {
+    margin-bottom: 20px;
+}
+
+/* ── Date Bar ───────────────────────────────────────── */
+.corp-date-bar {
+    display: flex;
+    background: #2EB67D;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.corp-date-cell {
+    flex: 1;
+    padding: 10px 16px;
+}
+
+.corp-date-cell:not(:last-child) {
+    border-right: 1px solid rgba(255,255,255,0.3);
+}
+
+.corp-date-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.85);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.corp-date-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* ── Line Items Table ───────────────────────────────── */
+.corp-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 24px;
+    font-size: 0.88rem;
+}
+
+.corp-table thead tr {
+    background: #2EB67D;
+}
+
+.corp-table thead th {
+    padding: 10px 14px;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: none;
+}
+
+.corp-table thead th:first-child {
+    border-radius: 6px 0 0 6px;
+}
+
+.corp-table thead th:last-child {
+    border-radius: 0 6px 6px 0;
+}
+
+.corp-table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.corp-table tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+.corp-table tbody td {
+    padding: 12px 14px;
+    vertical-align: top;
+    border-bottom: 1px solid #eee;
+}
+
+.corp-item-name {
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.corp-item-desc {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.corp-td-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: #2d2d2d;
+}
+
+.corp-td-center {
+    text-align: center;
+}
+
+/* ── Footer: Notes + Summary ────────────────────────── */
+.corp-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+}
+
+.corp-notes {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #555;
+    padding-top: 4px;
+}
+
+.corp-notes-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.corp-summary {
+    width: 260px;
+    flex-shrink: 0;
+}
+
+.corp-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 0.88rem;
+    color: #555;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.corp-summary-row span:last-child {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.corp-summary-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.corp-summary-due {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    margin-top: 8px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    background: #e8f5ef;
+    border-radius: 6px;
+}
+
+/* ── Terms & Conditions ─────────────────────────────── */
+.corp-terms {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.corp-terms-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+}
+
+.corp-terms-text {
+    font-size: 0.82rem;
+    color: #555;
+    line-height: 1.6;
+}
+
+/* ── Template Selector (Sidebar) ────────────────────── */
+.template-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.template-thumb {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-surface-mid);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.template-thumb:hover {
+    border-color: var(--color-text-muted);
+}
+
+.template-thumb.active {
+    border-color: var(--color-cta);
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.template-thumb-icon {
+    width: 100%;
+    height: 60px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.template-thumb-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    font-family: 'Manrope', sans-serif;
+}
+
+.template-thumb.active .template-thumb-label {
+    color: var(--color-text);
+}
